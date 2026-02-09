@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Image Verdict ZK</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">Zeko-ready Proofs for Image Provenance</p>
+        <h1>AI Image Verdict ZK</h1>
+        <p class="lede">
+          Paste a web page link, extract images, and generate a zero-knowledge proof that attests
+          whether an oracle labeled the image as AI-generated.
+        </p>
+      </header>
+
+      <section class="card">
+        <form id="analyze-form" class="row">
+          <input
+            id="url-input"
+            type="url"
+            placeholder="https://example.com/gallery"
+            required
+            autocomplete="off"
+          />
+          <button type="submit">Find Images</button>
+        </form>
+        <label class="toggle">
+          <input id="skip-svg" type="checkbox" checked />
+          Skip SVG images
+        </label>
+        <div class="actions">
+          <button id="analyze-selected" type="button" disabled>Analyze Selected</button>
+          <button id="retry-analyze" type="button" disabled>Retry</button>
+          <label class="toggle">
+            <input id="send-with-auro" type="checkbox" checked />
+            Submit with Auro
+          </label>
+          <button id="sign-proof" type="button" disabled>Sign Proof (Auro)</button>
+          <button id="submit-zeko" type="button" disabled>Submit to Zeko</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Images Found</h2>
+          <div id="image-list" class="image-list empty">No images yet.</div>
+        </div>
+        <div class="panel">
+          <h2>Verdict</h2>
+          <div id="verdict" class="verdict">Waiting for analysis.</div>
+          <div id="confidence" class="confidence"></div>
+          <div class="meta" id="method"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Proof Payload</h2>
+        <pre id="proof" class="code">Run an analysis to see the proof JSON.</pre>
+        <div class="tx">
+          <div>
+            <strong>Transaction Hash</strong>
+            <p id="tx-hash" class="mono">Not submitted yet.</p>
+          </div>
+          <div>
+            <strong>Status</strong>
+            <p id="tx-status">—</p>
+          </div>
+          <div>
+            <strong>On-chain Nonce</strong>
+            <p id="chain-nonce">—</p>
+          </div>
+          <button id="check-nonce" type="button">Check Nonce</button>
+          <button id="check-mempool" type="button">Check Mempool</button>
+          <button id="check-status" type="button" disabled>Check Status</button>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <p>
+          Demo proof is generated server-side using o1js. To settle to Zeko, wire the proof into a
+          Zeko contract and submit a transaction.
+        </p>
+      </footer>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

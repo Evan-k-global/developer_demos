@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+chmod +x "/Applications/AIImageVerdictZK/setup.sh" || true
+chmod +x "/Applications/AIImageVerdictZK/Start App.command" || true

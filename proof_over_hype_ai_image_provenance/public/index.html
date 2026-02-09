@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Image Verdict ZK</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">Zeko-ready Proofs for Image Provenance</p>
+        <h1>AI Image Verdict ZK</h1>
+        <p class="lede">
+          Paste a web page link, extract images, and generate a zero-knowledge proof that attests
+          whether an oracle labeled the image as AI-generated.
+        </p>
+      </header>
+
+      <section class="section-heading">
+        <h2>1) Find & Submit Proof</h2>
+        <p>Use this to analyze a web image, generate a proof, and anchor it on Zeko.</p>
+      </section>
+
+      <section class="card">
+        <form id="analyze-form" class="row">
+          <input
+            id="url-input"
+            type="url"
+            placeholder="https://example.com/gallery"
+            required
+            autocomplete="off"
+          />
+          <button type="submit">Find Images</button>
+        </form>
+        <label class="toggle">
+          <input id="skip-svg" type="checkbox" checked />
+          Skip SVG images
+        </label>
+        <div class="actions">
+          <button id="analyze-selected" type="button" disabled>Analyze Selected</button>
+          <button id="retry-analyze" type="button" disabled>Retry</button>
+          <button id="submit-zeko" type="button" disabled>Submit to Zeko</button>
+          <div class="byok-inline">
+            <span>Use your own API key (optional)</span>
+            <input id="sightengine-user" type="text" placeholder="Sightengine API user" />
+            <input id="sightengine-secret" type="password" placeholder="Sightengine API secret" />
+          </div>
+        </div>
+        <div class="hint">
+          <span id="demo-remaining">Demo remaining: —</span>
+          <span> · Resets every 24h. If you add your own key, you won’t hit the public demo limits. Get keys from </span>
+          <a href="https://sightengine.com/" target="_blank" rel="noreferrer">Sightengine</a>.
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Images Found</h2>
+          <div class="carousel">
+            <button id="images-prev" type="button" class="carousel-btn" aria-label="Scroll left">
+              ◀
+            </button>
+            <div id="image-list" class="image-list horizontal empty">No images yet.</div>
+            <button id="images-next" type="button" class="carousel-btn" aria-label="Scroll right">
+              ▶
+            </button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Verdict</h2>
+          <div id="verdict" class="verdict">Waiting for analysis.</div>
+          <div id="confidence" class="confidence"></div>
+          <div class="meta" id="method"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <details id="proof-details">
+          <summary>
+            Proof Payload
+            <span id="proof-preview" class="summary-preview">Run an analysis to see the proof JSON.</span>
+          </summary>
+          <pre id="proof" class="code">Run an analysis to see the proof JSON.</pre>
+          <div class="tx">
+            <div>
+              <strong>Transaction Hash</strong>
+              <p id="tx-hash" class="mono">Not submitted yet.</p>
+            </div>
+            <div>
+              <strong>Status</strong>
+              <p id="tx-status">—</p>
+            </div>
+            <div>
+              <strong>On-chain Nonce</strong>
+              <p id="chain-nonce">—</p>
+            </div>
+            <button id="check-nonce" type="button">Check Nonce</button>
+            <button id="check-mempool" type="button">Check Mempool</button>
+            <button id="check-status" type="button" disabled>Check Status</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="section-heading">
+        <h2>2) Verify Image</h2>
+        <p>
+          Use this to check if a specific image hash is verifiably anchored to a proof.
+          <strong>No API key is needed to verify if an image has already been anchored to a Zeko proof.</strong>
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>Verify Image</h2>
+        <div class="verify">
+          <div>
+            <label>Image URL</label>
+            <input id="verify-url" type="url" placeholder="https://example.com/image.jpg" />
+            <div class="actions">
+              <button id="verify-images-btn" type="button">Load Images</button>
+              <button id="verify-url-btn" type="button">Verify URL</button>
+            </div>
+            <div class="carousel">
+              <button id="verify-prev" type="button" class="carousel-btn" aria-label="Scroll left">
+                ◀
+              </button>
+              <div id="verify-image-list" class="image-list horizontal empty">No images loaded.</div>
+              <button id="verify-next" type="button" class="carousel-btn" aria-label="Scroll right">
+                ▶
+              </button>
+            </div>
+          </div>
+          <div class="verify-result">
+            <div>
+              <strong>Verification Result</strong>
+              <div id="verify-badge" class="badge neutral">Not verified</div>
+              <button id="export-proof" type="button" disabled>Export Merkle Proof</button>
+            </div>
+            <details id="verify-details">
+              <summary>
+                Result JSON
+                <span id="verify-preview" class="summary-preview">No verification yet.</span>
+              </summary>
+              <pre id="verify-result" class="code">No verification yet.</pre>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Verify Proof (Shareable)</h2>
+        <p class="section-note">Use this when someone sends you a proof JSON and you want to verify it independently.</p>
+        <div class="verify">
+          <div>
+            <label>Paste Proof JSON</label>
+            <textarea id="verify-proof-json" rows="6" placeholder="Paste proof JSON here..."></textarea>
+            <button id="verify-proof-btn" type="button">Verify Proof JSON</button>
+          </div>
+          <div>
+            <label>Upload Proof JSON</label>
+            <input id="verify-proof-file" type="file" accept="application/json" />
+            <button id="verify-proof-file-btn" type="button">Verify Proof File</button>
+          </div>
+          <details class="verify-result" id="proof-details" open>
+            <summary>Proof Verification Result</summary>
+            <div id="proof-badge" class="badge neutral">Not verified</div>
+            <pre id="proof-result" class="code">No proof verification yet.</pre>
+          </details>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <p>
+          Demo proof is generated server-side using o1js. To settle to Zeko, wire the proof into a
+          Zeko contract and submit a transaction.
+        </p>
+      </footer>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
