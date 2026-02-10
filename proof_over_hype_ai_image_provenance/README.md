@@ -9,9 +9,6 @@
 4. `npm run dev`
 5. Open `http://localhost:5173`
 
-**Deploy Public Demo**
-- [Deploy to Render](https://render.com/deploy)
-
 **Public Demo limits**
 - Public demo usage is limited to **3 analyses per IP per day for shared API keys**.
 - Users can bypass limits by supplying their own detector API keys in the UI.
