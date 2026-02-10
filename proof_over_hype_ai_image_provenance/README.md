@@ -2,29 +2,25 @@
 
 [![CI](https://github.com/Evan-k-global/Proof_over_Hype_AI-image-provenance/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Evan-k-global/Proof_over_Hype_AI-image-provenance/actions/workflows/ci.yml)
 
-**Quick Start**
+**Local Demo Quick Start**
 1. `cp .env.example .env`
 2. Fill in your own keys in `.env`
 3. `npm install`
 4. `npm run dev`
 5. Open `http://localhost:5173`
 
-**Deploy**
+**Deploy Public Demo**
 - [Deploy to Render](https://render.com/deploy)
-- [Deploy to Railway](https://railway.app/new)
 
-**Demo limits**
+**Public Demo limits**
 - Public demo usage is limited to **3 analyses per IP per day for shared API keys**.
 - Users can bypass limits by supplying their own detector API keys in the UI.
 - Optional hCaptcha support is available for public demos.
 
-**Live demo**
-- https://proof-over-hype-ai-image-provenance.onrender.com
-
 **Demo video**
 - `assets/Proof_over_Hype-demo.mov`
 
-Detector keys can be obtained from:
+Detector API keys can be obtained from (or any preferred service):
 - Sightengine: https://sightengine.com
 
 A minimal demo app that:
