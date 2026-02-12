@@ -14,7 +14,8 @@
 - Users can bypass limits by supplying their own detector API keys in the UI.
 - Optional hCaptcha support is available for public demos.
 
-**Demo video**
+**Demos**
+- `assets/demo_app.png`
 - `assets/Proof_over_Hype-demo.mov`
 
 Detector API keys can be obtained from (or any preferred service):
