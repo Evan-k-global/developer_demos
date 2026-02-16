@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zeko Metamask Snap Onboarding (Dev Mode)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body
+    data-snap-id="npm:mina-portal"
+    data-allowed-origins="http://localhost:5173,https://your-domain.com"
+    data-allowed-snap-ids="npm:mina-portal,local:http://localhost:8080"
+  >
+    <div class="ambient"></div>
+    <main class="layout" style="padding-top: 48px">
+      <section class="panel" style="max-width: 820px; margin: 0 auto">
+        <h1 style="margin-top: 0">Zeko Metamask Snap Onboarding (Dev Mode)</h1>
+        <p class="lede">
+          This companion UI keeps Mina account creation and network setup on a first‑party domain.
+          Your private keys stay inside the MetaMask snap sandbox.
+        </p>
+
+        <div class="field inline">
+          <label for="snap-mode">Snap mode</label>
+          <div class="snap-toggle">
+            <label class="toggle">
+              <input id="snap-mode" type="checkbox" />
+              <span>Use local snap</span>
+            </label>
+            <span id="snap-mode-label" class="pill ghost">Prod mode</span>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top: 16px">
+          <button id="install-snap" class="primary">Install Snap</button>
+          <button id="create-account" class="ghost">Create Mina Account</button>
+          <button id="switch-zeko" class="ghost">Switch to Zeko Testnet</button>
+          <button id="list-accounts" class="ghost">List Accounts</button>
+        </div>
+
+        <div class="panel" style="margin-top: 16px">
+          <strong>Status</strong>
+          <pre id="snap-status" class="inline-code">Not connected</pre>
+          <strong>Accounts</strong>
+          <pre id="snap-accounts" class="inline-code">—</pre>
+        </div>
+
+        <p class="hint" style="margin-top: 12px">
+          Use MetaMask Flask for local snaps. If you’re in dev mode, the snap must be running at
+          <code>http://localhost:8080</code>.
+        </p>
+        <p class="hint">
+          Dev mode requires enabling <strong>Local Snaps</strong> in MetaMask Flask settings.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      const installButton = document.getElementById('install-snap');
+      const createButton = document.getElementById('create-account');
+      const switchButton = document.getElementById('switch-zeko');
+      const listButton = document.getElementById('list-accounts');
+      const statusEl = document.getElementById('snap-status');
+      const accountsEl = document.getElementById('snap-accounts');
+      const snapModeToggle = document.getElementById('snap-mode');
+      const snapModeLabel = document.getElementById('snap-mode-label');
+
+      const DEFAULT_SNAP_ID = 'npm:mina-portal';
+      const LOCAL_SNAP_ID = 'local:http://localhost:8080';
+      const ALLOWED_METHODS = new Set([
+        'mina_accountList',
+        'mina_createAccount',
+        'mina_changeNetwork',
+        'mina_sendTransaction'
+      ]);
+
+      function getSnapId() {
+        return document.body?.dataset.snapId || DEFAULT_SNAP_ID;
+      }
+
+      function setSnapMode(isLocal) {
+        const snapId = isLocal ? LOCAL_SNAP_ID : DEFAULT_SNAP_ID;
+        if (document.body) {
+          document.body.dataset.snapId = snapId;
+        }
+        if (snapModeLabel) {
+          snapModeLabel.textContent = isLocal ? 'Dev mode' : 'Prod mode';
+        }
+        if (snapModeToggle) {
+          snapModeToggle.checked = isLocal;
+        }
+        localStorage.setItem('snapMode', isLocal ? 'local' : 'prod');
+      }
+
+      function getAllowedOrigins() {
+        const raw = document.body?.dataset.allowedOrigins || '';
+        const list = raw
+          .split(',')
+          .map((entry) => entry.trim())
+          .filter(Boolean);
+        return list.length ? list : [window.location.origin];
+      }
+
+      function getAllowedSnapIds() {
+        const raw = document.body?.dataset.allowedSnapIds || '';
+        const list = raw
+          .split(',')
+          .map((entry) => entry.trim())
+          .filter(Boolean);
+        return list.length ? list : [DEFAULT_SNAP_ID, LOCAL_SNAP_ID];
+      }
+
+      function assertAllowedOrigin() {
+        const allowed = getAllowedOrigins();
+        if (!allowed.includes(window.location.origin)) {
+          throw new Error('Snap access blocked: origin not allowed.');
+        }
+      }
+
+      function assertAllowedSnapId(snapId) {
+        const allowed = getAllowedSnapIds();
+        if (!allowed.includes(snapId)) {
+          throw new Error('Snap access blocked: snap id not allowed.');
+        }
+      }
+
+      function assertAllowedMethod(method) {
+        if (!ALLOWED_METHODS.has(method)) {
+          throw new Error('Snap access blocked: method not allowed.');
+        }
+      }
+
+      setSnapMode(localStorage.getItem('snapMode') === 'local');
+
+      snapModeToggle?.addEventListener('change', () => {
+        setSnapMode(Boolean(snapModeToggle.checked));
+      });
+
+      async function installSnap() {
+        if (!window.ethereum?.request) {
+          throw new Error('MetaMask not detected');
+        }
+        assertAllowedOrigin();
+        const snapId = getSnapId();
+        assertAllowedSnapId(snapId);
+        await window.ethereum.request({
+          method: 'wallet_requestSnaps',
+          params: { [snapId]: {} }
+        });
+        statusEl.textContent = `Snap installed: ${snapId}`;
+      }
+
+      async function createAccount() {
+        const snapId = getSnapId();
+        assertAllowedOrigin();
+        assertAllowedSnapId(snapId);
+        assertAllowedMethod('mina_createAccount');
+        const result = await window.ethereum.request({
+          method: 'wallet_invokeSnap',
+          params: {
+            snapId,
+            request: { method: 'mina_createAccount', params: { name: 'Zeko Account 1' } }
+          }
+        });
+        statusEl.textContent = 'Account created.';
+        accountsEl.textContent = JSON.stringify(result, null, 2);
+      }
+
+      async function switchNetwork() {
+        const snapId = getSnapId();
+        assertAllowedOrigin();
+        assertAllowedSnapId(snapId);
+        assertAllowedMethod('mina_changeNetwork');
+        const result = await window.ethereum.request({
+          method: 'wallet_invokeSnap',
+          params: {
+            snapId,
+            request: { method: 'mina_changeNetwork', params: { networkName: 'Zeko Testnet' } }
+          }
+        });
+        statusEl.textContent = 'Switched to Zeko Testnet.';
+        accountsEl.textContent = JSON.stringify(result, null, 2);
+      }
+
+      async function listAccounts() {
+        const snapId = getSnapId();
+        assertAllowedOrigin();
+        assertAllowedSnapId(snapId);
+        assertAllowedMethod('mina_accountList');
+        const result = await window.ethereum.request({
+          method: 'wallet_invokeSnap',
+          params: {
+            snapId,
+            request: { method: 'mina_accountList' }
+          }
+        });
+        statusEl.textContent = 'Accounts loaded.';
+        accountsEl.textContent = JSON.stringify(result, null, 2);
+      }
+
+      installButton?.addEventListener('click', () => {
+        installSnap().catch((err) => {
+          statusEl.textContent = err.message || 'Install failed';
+        });
+      });
+
+      createButton?.addEventListener('click', () => {
+        createAccount().catch((err) => {
+          statusEl.textContent = err.message || 'Create account failed';
+        });
+      });
+
+      switchButton?.addEventListener('click', () => {
+        switchNetwork().catch((err) => {
+          statusEl.textContent = err.message || 'Network change failed';
+        });
+      });
+
+      listButton?.addEventListener('click', () => {
+        listAccounts().catch((err) => {
+          statusEl.textContent = err.message || 'Account list failed';
+        });
+      });
+    </script>
+  </body>
+</html>

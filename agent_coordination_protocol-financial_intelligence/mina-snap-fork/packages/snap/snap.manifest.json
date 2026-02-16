@@ -1,0 +1,50 @@
+{
+  "version": "0.1.6",
+  "description": "MetaMask snap for Mina Protocol.",
+  "proposedName": "MinaPortal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sotatek-dev/mina-snap"
+  },
+  "source": {
+    "shasum": "YwYG4c3jFp50bFHJriswwV1mRdnkuzhvnnb9OBUgHgI=",
+    "location": {
+      "npm": {
+        "filePath": "dist/bundle.js",
+        "iconPath": "images/Mina_Icon.svg",
+        "packageName": "mina-portal",
+        "registry": "https://registry.npmjs.org/"
+      }
+    }
+  },
+  "initialPermissions": {
+    "endowment:network-access": {},
+    "endowment:webassembly": {},
+    "endowment:rpc": {
+      "dapps": true,
+      "snaps": false
+    },
+    "snap_dialog": {},
+    "snap_getBip32Entropy": [
+      {
+        "path": [
+          "m",
+          "44'",
+          "12586'"
+        ],
+        "curve": "secp256k1"
+      },
+      {
+        "path": [
+          "m",
+          "44'",
+          "1'"
+        ],
+        "curve": "secp256k1"
+      }
+    ],
+    "snap_notify": {},
+    "snap_manageState": {}
+  },
+  "manifestVersion": "0.1"
+}

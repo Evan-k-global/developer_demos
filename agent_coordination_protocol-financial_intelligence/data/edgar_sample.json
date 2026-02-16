@@ -1,0 +1,30 @@
+{
+  "AAPL": {
+    "cik": "0000320193",
+    "profitGrowth": 0.12,
+    "latestFiling": {
+      "type": "10-Q",
+      "date": "2025-10-30",
+      "summary": "Revenue growth driven by services; buyback authorization expanded."
+    },
+    "highlights": [
+      "Services margin improved",
+      "R&D increased 9% YoY",
+      "Inventory days stable"
+    ]
+  },
+  "MSFT": {
+    "cik": "0000789019",
+    "profitGrowth": 0.18,
+    "latestFiling": {
+      "type": "10-K",
+      "date": "2025-07-30",
+      "summary": "Cloud revenue momentum; capex elevated for AI infra."
+    },
+    "highlights": [
+      "Azure growth >30%",
+      "AI infra spend rising",
+      "Operating margin steady"
+    ]
+  }
+}

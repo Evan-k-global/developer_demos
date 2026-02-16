@@ -1,0 +1,72 @@
+{
+  "agents": [
+    {
+      "id": "alpha-signal",
+      "name": "Alpha Signal",
+      "tagline": "Momentum + earnings drift",
+      "priceMina": 0.1,
+      "assetClass": "Equities",
+      "successRate": 0.62,
+      "popularity": 842,
+      "claimedCAGR": 0.28,
+      "claimWindow": "12m",
+      "claimMethod": "Momentum + earnings drift backtest on SP500",
+      "treasuryPublicKey": "B62qj73StsbP5MQczg3xy1tTSc73GMa3nL8P5vWQNvqof2JfMaJqGGb",
+      "privacy": "zero-knowledge attestations",
+      "description": "Short-term signal with conservative risk controls.",
+      "status": "LIVE",
+      "createdAt": "2026-02-11T18:00:00.000Z"
+    },
+    {
+      "id": "edgar-scout",
+      "name": "EDGAR Scout",
+      "tagline": "Filings-driven catalyst detection",
+      "priceMina": 0.12,
+      "assetClass": "Equities",
+      "successRate": 0.68,
+      "popularity": 1064,
+      "claimedCAGR": 0.34,
+      "claimWindow": "12m",
+      "claimMethod": "EDGAR profit growth factor, top quintile",
+      "treasuryPublicKey": "B62qj73StsbP5MQczg3xy1tTSc73GMa3nL8P5vWQNvqof2JfMaJqGGb",
+      "privacy": "hashed prompts + on-chain attestations",
+      "description": "Focuses on 10-Q/8-K deltas and insider activity patterns.",
+      "status": "LIVE",
+      "createdAt": "2026-02-11T18:00:00.000Z"
+    },
+    {
+      "id": "macro-sentiment",
+      "name": "Macro Sentiment",
+      "tagline": "Rates + sector rotation",
+      "priceMina": 0.08,
+      "assetClass": "Sectors + Commodities",
+      "successRate": 0.57,
+      "popularity": 523,
+      "claimedCAGR": 0.19,
+      "claimWindow": "12m",
+      "claimMethod": "Gold correlation regime filter",
+      "treasuryPublicKey": "B62qj73StsbP5MQczg3xy1tTSc73GMa3nL8P5vWQNvqof2JfMaJqGGb",
+      "privacy": "private prompts, public proofs",
+      "description": "Macro regime filter with sector-level calls.",
+      "status": "BETA",
+      "createdAt": "2026-02-11T18:00:00.000Z"
+    },
+    {
+      "id": "crypto-quant",
+      "name": "Crypto Quant",
+      "tagline": "Top 500 technical scan",
+      "priceMina": 0.06,
+      "assetClass": "Crypto",
+      "successRate": 0.54,
+      "popularity": 311,
+      "claimedCAGR": 0.22,
+      "claimWindow": "12m",
+      "claimMethod": "Technical regime filter on top 500 crypto",
+      "treasuryPublicKey": "B62qj73StsbP5MQczg3xy1tTSc73GMa3nL8P5vWQNvqof2JfMaJqGGb",
+      "privacy": "hashed prompts + on-chain attestations",
+      "description": "Technical analysis on the top 500 crypto tickers.",
+      "status": "BETA",
+      "createdAt": "2026-02-11T18:00:00.000Z"
+    }
+  ]
+}

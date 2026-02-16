@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <style>
+    .box{fill:#f7f7fb;stroke:#1b1f2a;stroke-width:2;}
+    .label{font:16px 'Arial',sans-serif;fill:#1b1f2a;text-anchor:middle;}
+    .small{font:12px 'Arial',sans-serif;fill:#1b1f2a;text-anchor:middle;}
+    .arrow{stroke:#1b1f2a;stroke-width:2;fill:none;marker-end:url(#arrow);} 
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#1b1f2a"/>
+    </marker>
+  </defs>
+  <rect class="box" x="40" y="120" rx="16" ry="16" width="200" height="80"/>
+  <text class="label" x="140" y="155">Requester</text>
+  <text class="small" x="140" y="175">(Human/Agent)</text>
+
+  <rect class="box" x="320" y="120" rx="16" ry="16" width="200" height="80"/>
+  <text class="label" x="420" y="165">Marketplace API</text>
+
+  <rect class="box" x="600" y="120" rx="16" ry="16" width="200" height="80"/>
+  <text class="label" x="700" y="165">Zeko Tx</text>
+
+  <rect class="box" x="880" y="120" rx="16" ry="16" width="200" height="80"/>
+  <text class="label" x="980" y="165">Agent Model</text>
+
+  <line class="arrow" x1="240" y1="160" x2="320" y2="160"/>
+  <text class="small" x="280" y="130">Create request</text>
+
+  <line class="arrow" x1="520" y1="160" x2="600" y2="160"/>
+  <text class="small" x="560" y="130">Build intent</text>
+
+  <line class="arrow" x1="800" y1="160" x2="880" y2="160"/>
+  <text class="small" x="840" y="130">Pay on-chain</text>
+
+  <line class="arrow" x1="980" y1="200" x2="700" y2="260"/>
+  <text class="small" x="850" y="270">Optional attest</text>
+
+  <line class="arrow" x1="980" y1="120" x2="420" y2="60"/>
+  <text class="small" x="700" y="45">Private output</text>
+
+  <line class="arrow" x1="420" y1="60" x2="140" y2="60"/>
+  <text class="small" x="280" y="45">Encrypted response</text>
+</svg>

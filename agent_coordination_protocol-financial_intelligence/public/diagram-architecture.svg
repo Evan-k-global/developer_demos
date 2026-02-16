@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+  <style>
+    .box{fill:#f7f7fb;stroke:#1b1f2a;stroke-width:2;}
+    .label{font:16px 'Arial',sans-serif;fill:#1b1f2a;text-anchor:middle;}
+    .title{font:18px 'Arial',sans-serif;fill:#1b1f2a;text-anchor:middle;}
+    .small{font:12px 'Arial',sans-serif;fill:#1b1f2a;text-anchor:middle;}
+    .arrow{stroke:#1b1f2a;stroke-width:2;fill:none;marker-end:url(#arrow);} 
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#1b1f2a"/>
+    </marker>
+  </defs>
+  <text class="title" x="300" y="30">Off-Chain (Private)</text>
+  <text class="title" x="900" y="30">On-Chain (Zeko)</text>
+
+  <rect class="box" x="120" y="70" rx="16" ry="16" width="220" height="80"/>
+  <text class="label" x="230" y="115">Model</text>
+  <text class="small" x="230" y="135">Execution</text>
+
+  <rect class="box" x="120" y="180" rx="16" ry="16" width="220" height="80"/>
+  <text class="label" x="230" y="225">Encrypted</text>
+  <text class="small" x="230" y="245">Output</text>
+
+  <rect class="box" x="120" y="290" rx="16" ry="16" width="220" height="80"/>
+  <text class="label" x="230" y="335">Performance</text>
+  <text class="small" x="230" y="355">Computation</text>
+
+  <rect class="box" x="840" y="70" rx="16" ry="16" width="220" height="80"/>
+  <text class="label" x="950" y="115">Payment</text>
+  <text class="small" x="950" y="135">Tx</text>
+
+  <rect class="box" x="840" y="180" rx="16" ry="16" width="220" height="80"/>
+  <text class="label" x="950" y="225">Output</text>
+  <text class="small" x="950" y="245">Attestation</text>
+
+  <rect class="box" x="840" y="290" rx="16" ry="16" width="220" height="80"/>
+  <text class="label" x="950" y="335">Registry</text>
+  <text class="small" x="950" y="355">Root</text>
+
+  <rect class="box" x="500" y="180" rx="16" ry="16" width="200" height="80"/>
+  <text class="label" x="600" y="225">Requester</text>
+
+  <line class="arrow" x1="700" y1="220" x2="840" y2="110"/>
+  <line class="arrow" x1="700" y1="220" x2="340" y2="110"/>
+  <line class="arrow" x1="230" y1="150" x2="230" y2="180"/>
+  <line class="arrow" x1="230" y1="260" x2="230" y2="290"/>
+  <line class="arrow" x1="340" y1="220" x2="500" y2="220"/>
+  <line class="arrow" x1="700" y1="220" x2="840" y2="220"/>
+
+  <text class="small" x="600" y="405">Private outputs, public proofs</text>
+</svg>
