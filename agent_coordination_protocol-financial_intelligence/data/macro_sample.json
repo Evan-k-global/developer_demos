@@ -1,0 +1,12 @@
+{
+  "goldTrend": "up",
+  "correlations": {
+    "Technology": -0.35,
+    "Energy": 0.42,
+    "Financials": -0.18,
+    "Health Care": 0.12,
+    "Consumer Staples": 0.08,
+    "Consumer Discretionary": -0.22,
+    "Communication Services": -0.28
+  }
+}

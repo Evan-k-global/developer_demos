@@ -1,0 +1,23 @@
+{
+  "lastRun": "2026-02-16T20:21:33.599Z",
+  "results": [
+    {
+      "label": "stocks",
+      "ok": true,
+      "key": "us_stocks_sip/day_aggs_v1/2026/02/2026-02-13.csv.gz",
+      "processed": 0
+    },
+    {
+      "label": "crypto",
+      "ok": false,
+      "reason": "getObject failed: char '{' is not expected.:1:1\n  Deserialization error: to see the raw response, inspect the hidden field {error}.$response on this object.",
+      "extra": "{\"status\":\"NOT_AUTHORIZED\",\"request_id\":\"\",\"message\":\"forbidden\"}"
+    }
+  ],
+  "stocks": {
+    "lastKey": "us_stocks_sip/day_aggs_v1/2026/02/2026-02-12.csv.gz",
+    "date": "2026-02-12",
+    "processed": 0,
+    "updatedAt": "2026-02-13T19:37:21.579Z"
+  }
+}

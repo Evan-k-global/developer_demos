@@ -1,0 +1,31 @@
+{
+  "name": "zeko-ai-marketplace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "HOST=127.0.0.1 tsc -p tsconfig.json && HOST=127.0.0.1 node dist/server.js",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "deploy:local": "tsc -p tsconfig.json && node dist/zk/deployLocal.js",
+    "deploy:zeko": "tsc -p tsconfig.json && node dist/zk/deployZeko.js",
+    "keygen": "tsc -p tsconfig.json && node dist/zk/keygen.js",
+    "agent-cli": "tsc -p tsconfig.json && node dist/scripts/agent-cli.js",
+    "print-key": "tsc -p tsconfig.json && node dist/scripts/print-key.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.19.2",
+    "o1js": "^1.7.0",
+    "reflect-metadata": "^0.2.2",
+    "undici": "^6.19.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

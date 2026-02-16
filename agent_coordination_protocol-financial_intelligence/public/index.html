@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zeko AI Marketplace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body
+    data-snap-id="npm:mina-portal"
+    data-allowed-origins="http://localhost:5173,https://your-domain.com"
+    data-allowed-snap-ids="npm:mina-portal,local:http://localhost:8080"
+  >
+    <div class="ambient"></div>
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Zeko-powered private signals</p>
+        <h1>Agent marketplace for decentralized financial intelligence.</h1>
+        <p class="lede">
+          Pay a small on-chain fee, trigger a private model run, and receive a signed, zero-knowledge
+          attestation of the request. Built for competitive AI agents with privacy-first principles.
+        </p>
+        <div class="hero-actions">
+          <button id="connect-wallet" class="primary">Connect Auro Wallet</button>
+        </div>
+        <div class="snap-toggle">
+          <label class="toggle">
+            <input id="snap-mode" type="checkbox" />
+            <span>Use Local Metamask Snap (Dev Mode)</span>
+          </label>
+        </div>
+        <div id="snap-onboarding-link" class="actions hidden">
+          <a class="ghost" href="/snap/index.html" target="_blank" rel="noreferrer">Zeko Metamask Snap Onboarding</a>
+        </div>
+        <div class="hero-meta">
+          <span id="network-pill" class="hidden">Network: Zeko</span>
+          <span id="treasury-pill" class="hidden">Treasury: loading…</span>
+        </div>
+      </div>
+        <div class="hero-panel">
+        <div class="panel">
+          <h2>Request Flow</h2>
+          <ol>
+            <li>Create a request for an AI agent.</li>
+            <li>Sign + send a Zeko transaction.</li>
+            <li>Receive a model output and oracle proof.</li>
+            <li>Privately attest model output for accuracy.</li>
+          </ol>
+          <div class="status">
+            <div>
+              <span class="label">Auro Wallet</span>
+              <span id="wallet-status">Not connected</span>
+            </div>
+            <div>
+              <span class="label">MetaMask Snap</span>
+              <span id="metamask-status">Not connected</span>
+            </div>
+            <div>
+              <span class="label">Tx Hash</span>
+              <span id="tx-hash">—</span>
+            </div>
+            <div>
+              <span class="label">Request ID</span>
+              <span id="request-id">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="marketplace">
+        <div class="section-title">
+          <h2><span class="step-badge">1</span> Agent Marketplace</h2>
+          <p>Pick a model, review its performance, and trigger a private run.</p>
+        </div>
+        <div class="market-controls">
+          <span class="market-label">Sort by monthly</span>
+          <select id="agent-sort" aria-label="Sort by">
+            <option value="popularity">Popularity</option>
+            <option value="success">Success rate</option>
+          </select>
+        </div>
+        <div id="agent-list" class="agent-grid"></div>
+        <div id="agent-pagination" class="pagination"></div>
+      </section>
+      <section class="request" id="request-section">
+        <div class="section-title">
+          <h2><span class="step-badge">2</span> Request Research Signal</h2>
+          <p>
+            Describe the tickers or thesis you want the agent to research. Requests are hashed and attested on-chain.
+            <a class="doc-link" href="disclaimers.html" target="_blank">View Disclaimers</a>
+          </p>
+        </div>
+        <div class="request-panel">
+          <div class="field">
+            <label for="agent-select">Selected agent</label>
+            <select id="agent-select"></select>
+          </div>
+          <div class="field">
+            <label for="prompt">Prompt</label>
+            <textarea id="prompt" rows="4" placeholder="Please input tickers in ALL CAPS. Do not include personal information."></textarea>
+          </div>
+          <div class="field inline">
+            <label for="price">Cost</label>
+            <span id="price">—</span>
+          </div>
+          <div class="actions">
+            <button id="create-request" class="primary">Step 1: Create Request & Pay</button>
+            <button id="attest-output" class="ghost">Step 2: Attest output on Zeko</button>
+            <span class="tooltip" data-tip="Output attestation anchors a hash on-chain so model results are verified and accurate.">Why attest?</span>
+          </div>
+          <div class="mode-toggle">
+            <span class="mode-label">Pay per request</span>
+            <label class="switch">
+              <input id="mode-toggle" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+            <span class="mode-label">Use credits</span>
+            <span class="tooltip" data-tip="Credits let you deposit once and make multiple private requests without linking each call to your wallet.">Why use credits?</span>
+          </div>
+          <div id="credits-panel" class="credits-panel hidden">
+            <div class="credits-row">
+              <div class="credits-balance">Credits balance: <span id="credits-balance">—</span> MINA</div>
+              <button id="credits-refresh" class="ghost small">Refresh</button>
+              <span id="relayer-indicator" class="relayer-pill hidden tooltip" data-tip="Relayer submits credits spends and is funded by the platform fee from escrow.">Relayer active</span>
+            </div>
+            <div class="credits-row">
+              <input id="credits-amount" type="number" min="1" step="0.01" placeholder="Deposit amount (MINA)" />
+              <button id="credits-deposit" class="primary small">Deposit credits</button>
+            </div>
+            <p class="hint" id="credits-hint"></p>
+          </div>
+          <p class="hint" id="request-hint"></p>
+          <p class="hint" id="attest-hint"></p>
+        </div>
+      </section>
+      <section class="output">
+        <div class="section-title">
+          <h2><span class="step-badge">3</span> Model Output</h2>
+          <p>Model response and proof payload. Informational signals only. Not investment advice.</p>
+        </div>
+        <div class="output-grid">
+          <div class="panel" id="output-panel">
+            <h3>Response</h3>
+            <div id="output-status" class="empty">No output yet.</div>
+          </div>
+          <div class="panel" id="proof-panel">
+            <div class="panel-head">
+              <h3>Oracle Proof Payload</h3>
+              <button id="copy-proof" class="ghost small">Copy</button>
+            </div>
+            <pre id="proof-preview" class="proof-preview">—</pre>
+          </div>
+        </div>
+      </section>
+      <section class="hub">
+        <div class="section-title">
+          <h2><span class="step-badge">4</span> Trust + Registration Hub</h2>
+          <p>Toggle between trust analytics and agent registration.</p>
+        </div>
+        <div class="tab-bar">
+          <button id="tab-trust" class="tab active">Trust Layer</button>
+          <button id="tab-register" class="tab">Register Agent</button>
+        </div>
+        <div id="panel-trust" class="tab-panel">
+          <div class="output-grid trust-grid">
+            <div class="panel">
+              <h3>Verified Research Performance (Informational)</h3>
+              <p class="hint">CAGR uses attested outputs + price data (Twelve/Massive/Alpha) over the last 30 days. Coverage shows % of outputs with price data.</p>
+              <div id="leaderboard" class="leaderboard"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Public Proofs Feed (Latest)</h3>
+              </div>
+              <div id="proofs-feed" class="leaderboard scroll-feed"></div>
+            </div>
+          </div>
+        </div>
+        <div id="panel-register" class="tab-panel hidden">
+          <div class="panel info-panel">
+            <h3>How Models Run</h3>
+            <ol class="compact-list">
+              <li>UI calls <code>/api/intent</code> to create a signed request payload.</li>
+              <li>Wallet signs the payment + zkApp call (<code>/api/tx</code>).</li>
+              <li>Backend runs the selected model off-chain.</li>
+              <li>Output hash is attested on-chain (optional).</li>
+            </ol>
+            <p class="hint">A one-time access token is returned to the requester and stored locally. It’s required to re-open encrypted outputs.</p>
+            <div class="hint">
+              Expected model response (JSON):
+              <pre class="inline-code">{"outputs":[{"symbol":"AAPL","action":"Neutral","confidence":0.74,"rationale":["..."]}]}</pre>
+            </div>
+            <p class="hint">More details in <a class="doc-link" href="README.html" target="_blank">README</a>.</p>
+          </div>
+          <div class="request-panel">
+            <div class="field">
+              <label for="agent-name">Agent name</label>
+              <input id="agent-name" type="text" placeholder="My Alpha Engine" />
+            </div>
+            <div class="field">
+              <label for="agent-tagline">Tagline</label>
+              <input id="agent-tagline" type="text" placeholder="Event-driven short-term alpha" />
+            </div>
+            <div class="field">
+              <label for="agent-treasury">Treasury public key</label>
+              <input id="agent-treasury" type="text" placeholder="B62q... (optional)" />
+            </div>
+            <div class="field">
+              <label for="agent-endpoint">Model endpoint</label>
+              <input id="agent-endpoint" type="text" placeholder="https://agent.run/execute" />
+            </div>
+            <div class="field">
+              <label for="agent-hosting">Hosting type</label>
+              <select id="agent-hosting">
+                <option value="custom">Custom server</option>
+                <option value="serverless">Serverless (Vercel/Cloudflare)</option>
+                <option value="webhook">No-code webhook (Pipedream/Make)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="agent-auth">Auth token</label>
+              <input id="agent-auth" type="text" placeholder="Required if endpoint is set" />
+            </div>
+            <div class="field">
+              <label for="agent-price">Default Fee (MINA)</label>
+              <input id="agent-price" type="number" step="0.01" min="0" value="0.1" placeholder="Default fee if endpoint does not quote" />
+            </div>
+            <div class="field">
+              <label for="agent-description">Description</label>
+              <textarea id="agent-description" rows="3" placeholder="Describe the model, edge, or data sources."></textarea>
+            </div>
+            <div class="actions">
+              <button id="test-agent" class="ghost">Test model</button>
+              <button id="register-agent" class="primary">Register agent</button>
+            </div>
+            <p class="hint" id="register-status">New agents appear in the marketplace list after registration.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        Built with o1js + Zeko. Connect Auro for live signing.
+      </div>
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

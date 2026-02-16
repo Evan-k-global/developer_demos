@@ -1,0 +1,14 @@
+{
+  "tickers": [
+    { "symbol": "AAPL", "sector": "Technology", "momentum": 0.72 },
+    { "symbol": "MSFT", "sector": "Technology", "momentum": 0.68 },
+    { "symbol": "NVDA", "sector": "Technology", "momentum": 0.81 },
+    { "symbol": "AMZN", "sector": "Consumer Discretionary", "momentum": 0.59 },
+    { "symbol": "JPM", "sector": "Financials", "momentum": 0.54 },
+    { "symbol": "XOM", "sector": "Energy", "momentum": 0.48 },
+    { "symbol": "UNH", "sector": "Health Care", "momentum": 0.57 },
+    { "symbol": "COST", "sector": "Consumer Staples", "momentum": 0.63 },
+    { "symbol": "META", "sector": "Communication Services", "momentum": 0.66 },
+    { "symbol": "AVGO", "sector": "Technology", "momentum": 0.74 }
+  ]
+}
