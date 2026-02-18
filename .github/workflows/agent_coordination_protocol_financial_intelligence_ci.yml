@@ -1,6 +1,7 @@
 name: Agent Coordination Protocol CI
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - "agent_coordination_protocol-financial_intelligence/**"
