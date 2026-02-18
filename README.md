@@ -35,14 +35,6 @@ If you use AI-assisted development for o1js, configure the o1js MCP package/serv
 For more information, refer to this repository: 
 - o1js MCP server: [Usage with Claude Desktop](https://github.com/o1-labs/mcp-o1js/tree/main/packages/mcp-server-o1js#usage-with-claude-desktop)
 
-Example setup:
-
-# Run the server (installs if needed)
-npx mina-mcp-server
-
-# In another terminal, check health
-curl http://localhost:8080/health
-
 ## Auro transaction troubleshooting
 
 - `Invalid_signature`
