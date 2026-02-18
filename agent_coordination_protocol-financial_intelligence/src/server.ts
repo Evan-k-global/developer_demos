@@ -160,6 +160,22 @@ function verifySignedMessage(publicKeyBase58: string, signatureBase58: string, m
 let contractCompiled = false;
 const precompileZkapp = process.env.PRECOMPILE_ZKAPP === 'true';
 const debugTxTiming = process.env.DEBUG_TX_TIMING === 'true';
+let txLock: Promise<void> = Promise.resolve();
+
+async function withTxLock<T>(fn: () => Promise<T>): Promise<T> {
+  let release: () => void;
+  const next = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const prev = txLock;
+  txLock = prev.then(() => next);
+  await prev;
+  try {
+    return await fn();
+  } finally {
+    release!();
+  }
+}
 const stakeRequired = 0;
 const tzekoTokenAddress =
   process.env.TZEKO_TOKEN_ADDRESS ?? 'B62qjUhPDbMskxMduyzkyGnK6LZwHksuuYPRjyF4owJM7UWLGJynN36';
@@ -996,6 +1012,7 @@ async function buildUnsignedTx(payload: {
   priceMina?: number;
   treasuryPublicKey?: string | null;
 }, feePayer: string) {
+  return withTxLock(async () => {
   const start = debugTxTiming ? Date.now() : 0;
   const network = getNetwork();
   if (!network.graphql) {
@@ -1034,7 +1051,6 @@ async function buildUnsignedTx(payload: {
   if (zkappAccount.error) {
     throw new Error('ZkApp account not found on-chain');
   }
-  const zkappNonce = zkappAccount.account.nonce;
   if (!payload?.requestHash || !payload.agentIdHash || !payload.oraclePublicKey || !payload.signature || !payload.merkleRoot) {
     throw new Error('Missing payload fields for transaction');
   }
@@ -1091,7 +1107,6 @@ async function buildUnsignedTx(payload: {
     if (platformPk && platformFeeNano > 0n) {
       payment.send({ to: platformPk, amount: platformFee });
     }
-    zkapp.account.nonce.requireEquals(zkappNonce);
     await zkapp.submitSignedRequest(requestHash, agentIdHash, oraclePk, signature, newRoot);
   });
 
@@ -1110,6 +1125,7 @@ async function buildUnsignedTx(payload: {
     console.log(`buildUnsignedTx total ${Date.now() - start}ms`);
   }
   return { tx: txJson, fee, networkId: network.networkId };
+  });
 }
 
 async function buildAndSendRequestTxWithSponsor(payload: {
@@ -1121,6 +1137,7 @@ async function buildAndSendRequestTxWithSponsor(payload: {
   priceMina?: number;
   treasuryPublicKey?: string | null;
 }) {
+  return withTxLock(async () => {
   const sponsorKey = getSecret('SPONSOR_PRIVATE_KEY');
   if (!sponsorKey) {
     throw new Error('SPONSOR_PRIVATE_KEY not configured');
@@ -1156,7 +1173,6 @@ async function buildAndSendRequestTxWithSponsor(payload: {
   if (zkappAccount.error) {
     throw new Error('ZkApp account not found on-chain');
   }
-  const zkappNonce = zkappAccount.account.nonce;
 
   const requestHash = Field.fromJSON(payload.requestHash);
   const agentIdHash = Field.fromJSON(payload.agentIdHash);
@@ -1202,7 +1218,6 @@ async function buildAndSendRequestTxWithSponsor(payload: {
     if (platformPk && platformFeeNano > 0n) {
       payment.send({ to: platformPk, amount: platformFee });
     }
-    zkapp.account.nonce.requireEquals(zkappNonce);
     await zkapp.submitSignedRequest(requestHash, agentIdHash, oraclePk, signature, newRoot);
   });
 
@@ -1223,6 +1238,7 @@ async function buildAndSendRequestTxWithSponsor(payload: {
     (sent as any)?.transactionHash ??
     null;
   return { hash };
+  });
 }
 
 
@@ -1233,6 +1249,7 @@ async function buildUnsignedOutputTx(payload: {
   signature: unknown;
   merkleRoot: string;
 }, feePayer: string) {
+  return withTxLock(async () => {
   const start = debugTxTiming ? Date.now() : 0;
   const network = getNetwork();
   if (!network.graphql) {
@@ -1266,7 +1283,6 @@ async function buildUnsignedOutputTx(payload: {
   if (zkappAccount.error) {
     throw new Error('ZkApp account not found on-chain');
   }
-  const zkappNonce = zkappAccount.account.nonce;
   if (!payload?.requestHash || !payload.outputHash || !payload.oraclePublicKey || !payload.signature || !payload.merkleRoot) {
     throw new Error('Missing payload fields for transaction');
   }
@@ -1297,7 +1313,6 @@ async function buildUnsignedOutputTx(payload: {
     throw new Error(`Invalid feePayer public key: ${redactKey(feePayer)}`);
   }
   const tx = await Mina.transaction({ sender: feePayerPk, fee }, async () => {
-    zkapp.account.nonce.requireEquals(zkappNonce);
     await zkapp.submitSignedOutput(requestHash, outputHash, oraclePk, signature, newRoot);
   });
 
@@ -1316,6 +1331,7 @@ async function buildUnsignedOutputTx(payload: {
     console.log(`buildUnsignedOutputTx total ${Date.now() - start}ms`);
   }
   return { tx: txJson, fee, networkId: network.networkId };
+  });
 }
 
 async function buildAndSendOutputTxWithSponsor(payload: {
@@ -1325,6 +1341,7 @@ async function buildAndSendOutputTxWithSponsor(payload: {
   signature: unknown;
   merkleRoot: string;
 }) {
+  return withTxLock(async () => {
   const sponsorKey = getSecret('SPONSOR_PRIVATE_KEY');
   if (!sponsorKey) {
     throw new Error('SPONSOR_PRIVATE_KEY not configured');
@@ -1360,7 +1377,6 @@ async function buildAndSendOutputTxWithSponsor(payload: {
   if (zkappAccount.error) {
     throw new Error('ZkApp account not found on-chain');
   }
-  const zkappNonce = zkappAccount.account.nonce;
 
   if (!payload?.requestHash || !payload.outputHash || !payload.oraclePublicKey || !payload.signature || !payload.merkleRoot) {
     throw new Error('Missing payload fields for transaction');
@@ -1382,7 +1398,6 @@ async function buildAndSendOutputTxWithSponsor(payload: {
   const newRoot = Field.fromJSON(payload.merkleRoot);
 
   const tx = await Mina.transaction({ sender: sponsorPk, fee }, async () => {
-    zkapp.account.nonce.requireEquals(zkappNonce);
     await zkapp.submitSignedOutput(requestHash, outputHash, oraclePk, signature, newRoot);
   });
 
@@ -1403,6 +1418,7 @@ async function buildAndSendOutputTxWithSponsor(payload: {
     (sent as any)?.transactionHash ??
     null;
   return { hash };
+  });
 }
 
 async function buildUnsignedCreditsTx(payload: {
@@ -1416,6 +1432,7 @@ async function buildUnsignedCreditsTx(payload: {
   platformAmountMina?: number;
   platformPayee?: string;
 }, feePayer: string) {
+  return withTxLock(async () => {
   const network = getNetwork();
   if (!network.graphql) {
     throw new Error('ZEKO_GRAPHQL env var not set');
@@ -1453,7 +1470,6 @@ async function buildUnsignedCreditsTx(payload: {
   if (zkappAccount.error) {
     throw new Error('ZkApp account not found on-chain');
   }
-  const zkappNonce = zkappAccount.account.nonce;
 
   if (!payload?.creditsRoot || !payload.nullifierRoot || !payload.oraclePublicKey || !payload.signature) {
     throw new Error('Missing payload fields for transaction');
@@ -1512,7 +1528,6 @@ async function buildUnsignedCreditsTx(payload: {
       const payment = AccountUpdate.createSigned(feePayerPk);
       payment.send({ to: zkappAddress, amount });
     }
-    zkapp.account.nonce.requireEquals(zkappNonce);
     if (spendTo && spendAmountMina > 0) {
       const spendAmount = UInt64.from(BigInt(Math.round(spendAmountMina * 1e9)));
       const platformAmount = UInt64.from(BigInt(Math.round(platformAmountMina * 1e9)));
@@ -1545,6 +1560,7 @@ async function buildUnsignedCreditsTx(payload: {
   await tx.prove();
   const txJson = tx.toJSON() as any;
   return { tx: txJson, fee, networkId: network.networkId };
+  });
 }
 
 async function buildAndSendCreditsTxWithSponsor(payload: {
@@ -1557,6 +1573,7 @@ async function buildAndSendCreditsTxWithSponsor(payload: {
   platformAmountMina?: number;
   platformPayee?: string;
 }) {
+  return withTxLock(async () => {
   const sponsorKey = getSecret('SPONSOR_PRIVATE_KEY');
   if (!sponsorKey) {
     throw new Error('SPONSOR_PRIVATE_KEY not configured');
@@ -1592,7 +1609,6 @@ async function buildAndSendCreditsTxWithSponsor(payload: {
   if (zkappAccount.error) {
     throw new Error('ZkApp account not found on-chain');
   }
-  const zkappNonce = zkappAccount.account.nonce;
 
   if (!payload?.creditsRoot || !payload.nullifierRoot || !payload.oraclePublicKey || !payload.signature) {
     throw new Error('Missing payload fields for transaction');
@@ -1635,7 +1651,6 @@ async function buildAndSendCreditsTxWithSponsor(payload: {
   }
 
   const tx = await Mina.transaction({ sender: sponsorPk, fee }, async () => {
-    zkapp.account.nonce.requireEquals(zkappNonce);
     if (spendTo && spendAmountMina > 0) {
       const spendAmount = UInt64.from(BigInt(Math.round(spendAmountMina * 1e9)));
       const platformAmount = UInt64.from(BigInt(Math.round(platformAmountMina * 1e9)));
@@ -1671,6 +1686,7 @@ async function buildAndSendCreditsTxWithSponsor(payload: {
     (sent as any)?.transactionHash ??
     null;
   return { hash };
+  });
 }
 
 
@@ -3963,7 +3979,6 @@ app.post('/api/agent-stake-tx', async (req, res) => {
     if (zkappAccount.error) {
       throw new Error('ZkApp account not found on-chain');
     }
-    const zkappNonce = zkappAccount.account.nonce;
 
     const agentIdHash = Field.fromJSON(payload.agentIdHash);
     const ownerHash = Field.fromJSON(payload.ownerHash);
@@ -3991,7 +4006,6 @@ app.post('/api/agent-stake-tx', async (req, res) => {
     }
 
     const tx = await Mina.transaction({ sender: feePayerPk, fee }, async () => {
-      zkapp.account.nonce.requireEquals(zkappNonce);
       await zkapp.registerAgent(agentIdHash, ownerHash, treasuryHash, stakeAmountField, oraclePk, signature, newRoot);
     });
 
