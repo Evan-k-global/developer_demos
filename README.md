@@ -32,11 +32,15 @@ A collection of production-minded demos for building zero-knowledge apps and age
 
 If you use AI-assisted development for o1js, configure the o1js MCP package/server from the official source and verify it responds before coding contract changes.
 
-Recommended docs to include:
-- Official o1js MCP package link
-- Install command
-- Local run command
-- Quick health-check command
+For more information, refer to the official repository: [mina-mcp-server on GitHub](https://github.com/ronykris/mina-mcp-server).
+
+Example setup:
+```bash
+# Run the server (installs if needed)
+npx mina-mcp-server
+
+# In another terminal, check health
+curl http://localhost:8080/health
 
 ## Auro transaction troubleshooting
 
