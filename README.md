@@ -32,10 +32,11 @@ A collection of production-minded demos for building zero-knowledge apps and age
 
 If you use AI-assisted development for o1js, configure the o1js MCP package/server from the official source and verify it responds before coding contract changes.
 
-For more information, refer to the official repository: [mina-mcp-server on GitHub](https://github.com/ronykris/mina-mcp-server).
+For more information, refer to this repository: 
+- o1js MCP server: [Usage with Claude Desktop](https://github.com/o1-labs/mcp-o1js/tree/main/packages/mcp-server-o1js#usage-with-claude-desktop)
 
 Example setup:
-```bash
+
 # Run the server (installs if needed)
 npx mina-mcp-server
 
