@@ -71,20 +71,7 @@ Each demo has its own `.env.example`.
 
 Never commit private keys or secrets.
 
-## Auro transaction troubleshooting
+## Troubleshooting
 
-- `Invalid_signature`
-  - Usually key mismatch between env/deploy/account
-  - Re-verify key pair and active `.env`
-
-- `Account_nonce_precondition_unsatisfied`
-  - Usually stale nonce or concurrent send
-  - Refresh nonce and retry after previous tx inclusion
-
-- `Cannot start new transaction within another transaction`
-  - Usually nested tx context in code
-  - Ensure each `Mina.transaction(...)` runs in an isolated flow
-
-- UI stuck on wallet signature
-  - Usually tx proving/build latency
-  - Add timing logs and compare local vs hosted machine tier
+- Agent marketplace (Auro transaction troubleshooting):
+  - `agent_coordination_protocol-financial_intelligence/docs/auro-transaction-troubleshooting.md`

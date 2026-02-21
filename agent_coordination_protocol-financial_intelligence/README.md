@@ -46,6 +46,7 @@ npm run dev
 
 - Auro Wallet: [Get Auro](https://www.aurowallet.com/)
 - Zeko Testnet Faucet: [faucet.zeko.io](https://faucet.zeko.io/)
+- Troubleshooting: `docs/auro-transaction-troubleshooting.md`
 
 ## Registering Your Model (Step‑by‑Step)
 
