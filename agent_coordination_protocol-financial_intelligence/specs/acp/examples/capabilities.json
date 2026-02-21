@@ -1,0 +1,35 @@
+{
+  "protocol": "acp",
+  "version": "0.1",
+  "serviceId": "alpha-signal",
+  "name": "Alpha Signal",
+  "inputSchema": "../schemas/input.json",
+  "outputSchema": "../schemas/output.json",
+  "pricing": {
+    "defaultFeeMina": 0.1,
+    "supportsDynamicFee": true
+  },
+  "paymentModes": [
+    "pay_per_request",
+    "credits"
+  ],
+  "privacy": {
+    "encryptedOutput": true,
+    "publicAttestation": true
+  },
+  "attestation": {
+    "chain": "zeko-testnet",
+    "contract": "B62qmjAhFUk26PqzVexHrUjXtqFPUEt5JL63MdJ2KKnkBQ1JRrWoVuw"
+  },
+  "optionalTrust": {
+    "supportsZkTlsSourceProofs": true
+  },
+  "sla": {
+    "p50Ms": 8000,
+    "p95Ms": 30000
+  },
+  "specialization": [
+    "finance",
+    "signal-generation"
+  ]
+}
