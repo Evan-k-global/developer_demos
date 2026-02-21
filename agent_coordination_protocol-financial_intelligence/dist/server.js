@@ -32,6 +32,9 @@ const ipfsAuth = process.env.IPFS_AUTH || '';
 const ipfsGateway = process.env.IPFS_GATEWAY || '';
 const platformTreasuryKey = process.env.PLATFORM_TREASURY_PUBLIC_KEY || 'B62qqpyJPDGci2uxpapnXQmrFr77b47wRx1v2GDRnAHMUFJFjJv4YPb';
 const platformFeeMina = process.env.PLATFORM_FEE_MINA ? Number(process.env.PLATFORM_FEE_MINA) : 0.01;
+const adminToken = process.env.ADMIN_TOKEN || '';
+const acpProtocol = 'acp';
+const acpVersion = '0.1';
 function getRelayerPublicKey() {
     const sponsorKey = getSecret('SPONSOR_PRIVATE_KEY');
     if (!sponsorKey)
@@ -276,6 +279,14 @@ function normalizeActionLabel(action) {
     if (value === 'SELL' || value === 'BEARISH' || value === 'NEGATIVE')
         return 'NEGATIVE';
     return 'NEUTRAL';
+}
+function normalizeAcpAction(action) {
+    const normalized = normalizeActionLabel(action);
+    if (normalized === 'POSITIVE')
+        return 'positive';
+    if (normalized === 'NEGATIVE')
+        return 'negative';
+    return 'neutral';
 }
 function normalizeOutputActions(output) {
     if (!output || typeof output !== 'object')
@@ -1604,7 +1615,21 @@ async function ensureSeedData() {
             const target = path.join(dataDir, file === 'requests_seed.json' ? 'requests.json' : file);
             try {
                 await fs.access(target);
-                return;
+                if (file === 'requests_seed.json') {
+                    try {
+                        const existing = await fs.readFile(target, 'utf-8');
+                        const parsed = JSON.parse(existing);
+                        if (Array.isArray(parsed?.requests) && parsed.requests.length > 0) {
+                            return;
+                        }
+                    }
+                    catch {
+                        // fall through to seed
+                    }
+                }
+                else {
+                    return;
+                }
             }
             catch {
                 // continue to seed
@@ -3009,6 +3034,224 @@ function validateModelResponse(payload) {
     }
     return normalized;
 }
+async function createIntentCore(input) {
+    const { agentId, prompt, requester, useCredits } = input;
+    if (!agentId || typeof agentId !== 'string')
+        throw new Error('Missing agentId');
+    if (!prompt || typeof prompt !== 'string')
+        throw new Error('Missing prompt');
+    if (containsProhibitedPersonalContext(prompt)) {
+        throw new Error('Prompt includes personal financial context. Please remove personal details.');
+    }
+    const sanitizedPrompt = sanitizePrompt(prompt);
+    const data = await readJson(agentsPath, { agents: [] });
+    const agent = data.agents.find((entry) => entry.id === agentId);
+    if (!agent)
+        throw new Error('Unknown agent');
+    if (agent.disabled) {
+        throw new Error('Agent is disabled by the platform');
+    }
+    let quotedPrice = null;
+    if (agent.modelEndpoint) {
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (agent.modelAuth) {
+                headers.Authorization = `Bearer ${agent.modelAuth}`;
+            }
+            const quoteRes = await fetch(agent.modelEndpoint, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    mode: 'price',
+                    agentId,
+                    prompt: sanitizedPrompt
+                })
+            });
+            if (quoteRes.ok) {
+                const quoteData = await quoteRes.json();
+                const maybePrice = Number(quoteData?.priceMina ?? quoteData?.price);
+                if (Number.isFinite(maybePrice) && maybePrice > 0) {
+                    quotedPrice = maybePrice;
+                }
+            }
+        }
+        catch {
+            quotedPrice = null;
+        }
+    }
+    const requestId = crypto.randomUUID();
+    const accessToken = crypto.randomBytes(24).toString('base64url');
+    const createdAt = new Date().toISOString();
+    const requesterValue = useCredits ? 'CREDITS' : requester ?? '';
+    const requestHash = hashToField(`${agentId}:${sanitizedPrompt}:${createdAt}:${requesterValue}`);
+    const agentIdHash = hashToField(agentId);
+    const leaf = computeLeaf(requestHash, agentIdHash);
+    const { index, newRoot, witness } = await commitLeaf(leaf);
+    const oracleKey = getOracleKey();
+    const oraclePk = oracleKey.toPublicKey();
+    const signature = Signature.create(oracleKey, [requestHash, agentIdHash, newRoot]);
+    const requestsStore = await readJson(requestsPath, { requests: [] });
+    const priceMina = quotedPrice ?? agent.priceMina;
+    requestsStore.requests.unshift({
+        id: requestId,
+        agentId,
+        prompt: sanitizedPrompt,
+        requester: requesterValue || null,
+        useCredits: Boolean(useCredits),
+        createdAt,
+        status: 'AWAITING_PAYMENT',
+        priceMina,
+        treasuryPublicKey: agent.treasuryPublicKey ?? null,
+        accessTokenHash: hashAccessToken(accessToken),
+        requestHash: requestHash.toJSON(),
+        agentIdHash: agentIdHash.toJSON(),
+        merkleRoot: newRoot.toJSON(),
+        merkleIndex: index,
+        merkleWitness: witness
+    });
+    await writeJson(requestsPath, requestsStore);
+    return {
+        requestId,
+        priceMina,
+        accessToken,
+        payload: {
+            requestHash: requestHash.toJSON(),
+            agentIdHash: agentIdHash.toJSON(),
+            oraclePublicKey: oraclePk.toBase58(),
+            signature: signature.toJSON(),
+            merkleRoot: newRoot.toJSON(),
+            priceMina,
+            treasuryPublicKey: agent.treasuryPublicKey ?? null,
+            merkleIndex: index,
+            merkleWitness: witness
+        }
+    };
+}
+async function fulfillCore(input) {
+    const { requestId, txHash, creditTxHash, accessToken } = input;
+    if (!requestId)
+        throw new Error('Missing requestId');
+    const requestsStore = await readJson(requestsPath, { requests: [] });
+    const request = requestsStore.requests.find((entry) => entry.id === requestId);
+    if (!request)
+        throw new Error('Request not found');
+    if (request.accessTokenHash) {
+        const tokenMatch = accessToken && request.accessTokenHash === hashAccessToken(accessToken);
+        if (!tokenMatch) {
+            const unauthorizedError = new Error('Unauthorized');
+            unauthorizedError.statusCode = 403;
+            throw unauthorizedError;
+        }
+    }
+    const demoMode = process.env.DEMO_MODE !== 'false';
+    if (!demoMode && !txHash && !creditTxHash) {
+        throw new Error('On-chain payment or credits transaction required before fulfillment');
+    }
+    if (request.status === 'FULFILLED') {
+        if (request.outputEncrypted) {
+            const key = await getOutputEncryptionKey();
+            const decrypted = decryptPayload(request.outputEncrypted, key);
+            return {
+                requestId,
+                agentId: request.agentId,
+                output: decrypted,
+                status: request.status,
+                outputProof: request.outputProof
+            };
+        }
+        return {
+            requestId,
+            agentId: request.agentId,
+            output: request.output,
+            status: request.status,
+            outputProof: request.outputProof
+        };
+    }
+    let output;
+    try {
+        const agentsStore = await readJson(agentsPath, { agents: [] });
+        const agentEntry = agentsStore.agents.find((agent) => agent.id === request.agentId);
+        output =
+            (await callExternalModel(agentEntry, {
+                requestId: request.id,
+                agentId: request.agentId,
+                prompt: request.prompt,
+                requester: request.useCredits ? 'credits:anonymous' : request.requester,
+                requestHash: request.requestHash
+            })) ||
+                (await simulateModel({
+                    agentId: request.agentId,
+                    prompt: request.prompt,
+                    requestId: request.id
+                }));
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : 'Model failed';
+        throw new Error(message);
+    }
+    const cleanedOutput = sanitizeModelOutput(output);
+    const normalizedOutputRaw = cleanedOutput && typeof cleanedOutput === 'object' && Array.isArray(cleanedOutput.outputs)
+        ? cleanedOutput
+        : { outputs: [cleanedOutput] };
+    const normalizedOutput = normalizeOutputActions(normalizedOutputRaw);
+    const outputSummary = {
+        outputs: (normalizedOutput.outputs || []).map((entry) => ({
+            symbol: entry?.symbol ?? 'N/A',
+            action: entry?.action ?? 'NEUTRAL',
+            confidence: entry?.confidence ?? null
+        }))
+    };
+    const outputString = stableStringify(normalizedOutput);
+    const outputHash = hashToField(outputString);
+    const outputLeaf = computeOutputLeaf(Field.fromJSON(request.requestHash), outputHash);
+    const outputCommit = await commitOutputLeaf(outputLeaf);
+    const oracleKey = getOracleKey();
+    const oraclePk = oracleKey.toPublicKey();
+    const outputSignature = Signature.create(oracleKey, [
+        Field.fromJSON(request.requestHash),
+        outputHash,
+        outputCommit.newRoot
+    ]);
+    const outputKey = await getOutputEncryptionKey();
+    const encryptedOutput = encryptPayload(normalizedOutput, outputKey);
+    const ipfsResult = await uploadEncryptedToIpfs({
+        requestId: request.id,
+        outputHash: outputHash.toJSON(),
+        encrypted: encryptedOutput
+    });
+    request.status = 'FULFILLED';
+    request.txHash = txHash ?? request.txHash ?? 'mock';
+    if (creditTxHash) {
+        request.creditTxHash = creditTxHash;
+    }
+    request.output = null;
+    request.outputSummary = outputSummary;
+    request.outputEncrypted = encryptedOutput;
+    if (ipfsResult?.cid) {
+        request.outputCid = ipfsResult.cid;
+        request.outputGateway = ipfsResult.gateway;
+    }
+    request.outputProof = {
+        requestHash: request.requestHash,
+        outputHash: outputHash.toJSON(),
+        oraclePublicKey: oraclePk.toBase58(),
+        signature: outputSignature.toJSON(),
+        merkleRoot: outputCommit.newRoot.toJSON(),
+        merkleIndex: outputCommit.index,
+        merkleWitness: outputCommit.witness
+    };
+    request.fulfilledAt = new Date().toISOString();
+    await writeJson(requestsPath, requestsStore);
+    return {
+        requestId,
+        agentId: request.agentId,
+        output,
+        status: request.status,
+        outputProof: request.outputProof,
+        outputCid: ipfsResult?.cid || null,
+        outputGateway: ipfsResult?.gateway || null
+    };
+}
 app.get('/api/config', (_req, res) => {
     const network = getNetwork();
     res.json({
@@ -3021,11 +3264,107 @@ app.get('/api/config', (_req, res) => {
         creditsMinDeposit
     });
 });
+app.get('/.well-known/acp-capabilities.json', async (_req, res) => {
+    const data = await readJson(agentsPath, { agents: [] });
+    const activeAgents = data.agents.filter((agent) => !agent.disabled);
+    const services = activeAgents.map((agent) => ({
+        protocol: acpProtocol,
+        version: acpVersion,
+        serviceId: agent.id,
+        name: agent.name,
+        pricing: {
+            defaultFeeMina: Number(agent.priceMina || 0),
+            supportsDynamicFee: Boolean(agent.modelEndpoint)
+        },
+        paymentModes: ['pay_per_request', 'credits'],
+        privacy: {
+            encryptedOutput: true,
+            publicAttestation: true
+        },
+        attestation: {
+            chain: 'zeko-testnet',
+            contract: getZkappPublicKey() || null
+        }
+    }));
+    res.json({
+        protocol: acpProtocol,
+        version: acpVersion,
+        services
+    });
+});
+app.post('/acp/intent', async (req, res) => {
+    try {
+        const { serviceId, prompt, requester, paymentMode } = req.body ?? {};
+        const useCredits = paymentMode === 'credits';
+        const result = await createIntentCore({
+            agentId: String(serviceId || ''),
+            prompt: String(prompt || ''),
+            requester,
+            useCredits
+        });
+        res.json({
+            protocol: acpProtocol,
+            version: acpVersion,
+            requestId: result.requestId,
+            serviceId,
+            paymentMode: useCredits ? 'credits' : 'pay_per_request',
+            accessToken: result.accessToken,
+            payment: {
+                amountMina: result.priceMina,
+                payload: result.payload
+            }
+        });
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : 'ACP intent failed';
+        res.status(400).json({ error: message });
+    }
+});
+app.post('/acp/fulfill', async (req, res) => {
+    try {
+        const { requestId, txHash, creditTxHash, accessToken } = req.body ?? {};
+        const fulfilled = await fulfillCore({ requestId, txHash, creditTxHash, accessToken });
+        const normalized = normalizeOutputActions(fulfilled.output);
+        const outputs = Array.isArray(normalized?.outputs) ? normalized.outputs : [];
+        const acpOutput = {
+            outputs: outputs.map((entry) => ({
+                symbol: String(entry?.symbol ?? 'N/A'),
+                action: normalizeAcpAction(entry?.action),
+                confidence: Number(entry?.confidence ?? 0),
+                rationale: Array.isArray(entry?.rationale) ? entry.rationale.map((r) => String(r)) : []
+            }))
+        };
+        res.json({
+            protocol: acpProtocol,
+            version: acpVersion,
+            requestId: fulfilled.requestId,
+            serviceId: fulfilled.agentId ?? null,
+            status: fulfilled.status === 'FULFILLED' ? 'completed' : 'failed',
+            outputHash: fulfilled.outputProof?.outputHash ?? null,
+            output: acpOutput,
+            attestation: fulfilled.outputProof
+                ? {
+                    txHash: null,
+                    chain: 'zeko-testnet',
+                    contract: getZkappPublicKey() || null
+                }
+                : null
+        });
+    }
+    catch (err) {
+        if (err instanceof Error && err.statusCode === 403) {
+            return res.status(403).json({ error: err.message });
+        }
+        const message = err instanceof Error ? err.message : 'ACP fulfill failed';
+        res.status(400).json({ error: message });
+    }
+});
 app.get('/api/agents', async (_req, res) => {
     const data = await readJson(agentsPath, { agents: [] });
+    const activeAgents = data.agents.filter((agent) => !agent.disabled);
     const requestsStore = await readJson(requestsPath, { requests: [] });
     const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const agents = await Promise.all(data.agents.map(async (agent) => {
+    const agents = await Promise.all(activeAgents.map(async (agent) => {
         const defaultSources = {
             'alpha-signal': 'S&P 500 price momentum + earnings drift',
             'edgar-scout': 'SEC EDGAR filings + price series',
@@ -3083,6 +3422,54 @@ app.get('/api/agents', async (_req, res) => {
         };
     }));
     res.json({ agents });
+});
+app.post('/api/admin/agents/:id/disable', async (req, res) => {
+    try {
+        const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+        if (!adminToken || token !== adminToken) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        const agentId = req.params.id;
+        const { reason } = req.body ?? {};
+        const data = await readJson(agentsPath, { agents: [] });
+        const agent = data.agents.find((entry) => entry.id === agentId);
+        if (!agent) {
+            return res.status(404).json({ error: 'Agent not found' });
+        }
+        agent.disabled = true;
+        agent.disabledReason = reason || 'Policy violation';
+        agent.disabledAt = new Date().toISOString();
+        await writeJson(agentsPath, data);
+        res.json({ ok: true, agentId, disabled: true });
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : 'Disable failed';
+        res.status(400).json({ error: message });
+    }
+});
+app.post('/api/admin/seed-requests', async (req, res) => {
+    try {
+        const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+        if (!adminToken || token !== adminToken) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        await ensureSeedData();
+        const requestsFile = path.join(dataDir, 'requests.json');
+        let count = 0;
+        try {
+            const raw = await fs.readFile(requestsFile, 'utf-8');
+            const parsed = JSON.parse(raw);
+            count = Array.isArray(parsed?.requests) ? parsed.requests.length : 0;
+        }
+        catch {
+            // ignore
+        }
+        res.json({ ok: true, requestsSeeded: count });
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : 'Seed requests failed';
+        res.status(400).json({ error: message });
+    }
 });
 app.get('/api/leaderboard', async (_req, res) => {
     const data = await readJson(agentsPath, { agents: [] });
@@ -3480,94 +3867,8 @@ app.get('/api/edgar', async (req, res) => {
 app.post('/api/intent', async (req, res) => {
     try {
         const { agentId, prompt, requester, useCredits } = req.body ?? {};
-        if (!agentId || typeof agentId !== 'string')
-            throw new Error('Missing agentId');
-        if (!prompt || typeof prompt !== 'string')
-            throw new Error('Missing prompt');
-        if (containsProhibitedPersonalContext(prompt)) {
-            throw new Error('Prompt includes personal financial context. Please remove personal details.');
-        }
-        const sanitizedPrompt = sanitizePrompt(prompt);
-        const data = await readJson(agentsPath, { agents: [] });
-        const agent = data.agents.find((entry) => entry.id === agentId);
-        if (!agent)
-            throw new Error('Unknown agent');
-        // Optional endpoint-driven pricing (best-effort, fallback to default fee)
-        let quotedPrice = null;
-        if (agent.modelEndpoint) {
-            try {
-                const headers = { 'Content-Type': 'application/json' };
-                if (agent.modelAuth) {
-                    headers.Authorization = `Bearer ${agent.modelAuth}`;
-                }
-                const quoteRes = await fetch(agent.modelEndpoint, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        mode: 'price',
-                        agentId,
-                        prompt: sanitizedPrompt
-                    })
-                });
-                if (quoteRes.ok) {
-                    const quoteData = await quoteRes.json();
-                    const maybePrice = Number(quoteData?.priceMina ?? quoteData?.price);
-                    if (Number.isFinite(maybePrice) && maybePrice > 0) {
-                        quotedPrice = maybePrice;
-                    }
-                }
-            }
-            catch {
-                quotedPrice = null;
-            }
-        }
-        const requestId = crypto.randomUUID();
-        const accessToken = crypto.randomBytes(24).toString('base64url');
-        const createdAt = new Date().toISOString();
-        const requesterValue = useCredits ? 'CREDITS' : requester ?? '';
-        const requestHash = hashToField(`${agentId}:${sanitizedPrompt}:${createdAt}:${requesterValue}`);
-        const agentIdHash = hashToField(agentId);
-        const leaf = computeLeaf(requestHash, agentIdHash);
-        const { index, newRoot, witness } = await commitLeaf(leaf);
-        const oracleKey = getOracleKey();
-        const oraclePk = oracleKey.toPublicKey();
-        const signature = Signature.create(oracleKey, [requestHash, agentIdHash, newRoot]);
-        const requestsStore = await readJson(requestsPath, { requests: [] });
-        const priceMina = quotedPrice ?? agent.priceMina;
-        requestsStore.requests.unshift({
-            id: requestId,
-            agentId,
-            prompt: sanitizedPrompt,
-            requester: requesterValue || null,
-            useCredits: Boolean(useCredits),
-            createdAt,
-            status: 'AWAITING_PAYMENT',
-            priceMina,
-            treasuryPublicKey: agent.treasuryPublicKey ?? null,
-            accessTokenHash: hashAccessToken(accessToken),
-            requestHash: requestHash.toJSON(),
-            agentIdHash: agentIdHash.toJSON(),
-            merkleRoot: newRoot.toJSON(),
-            merkleIndex: index,
-            merkleWitness: witness
-        });
-        await writeJson(requestsPath, requestsStore);
-        res.json({
-            requestId,
-            priceMina,
-            accessToken,
-            payload: {
-                requestHash: requestHash.toJSON(),
-                agentIdHash: agentIdHash.toJSON(),
-                oraclePublicKey: oraclePk.toBase58(),
-                signature: signature.toJSON(),
-                merkleRoot: newRoot.toJSON(),
-                priceMina,
-                treasuryPublicKey: agent.treasuryPublicKey ?? null,
-                merkleIndex: index,
-                merkleWitness: witness
-            }
-        });
+        const result = await createIntentCore({ agentId, prompt, requester, useCredits });
+        res.json(result);
     }
     catch (err) {
         const message = err instanceof Error ? err.message : 'Unable to create intent';
@@ -3723,115 +4024,13 @@ app.post('/api/agent-stake-tx', async (req, res) => {
 app.post('/api/fulfill', async (req, res) => {
     try {
         const { requestId, txHash, creditTxHash, accessToken } = req.body ?? {};
-        if (!requestId)
-            throw new Error('Missing requestId');
-        const requestsStore = await readJson(requestsPath, { requests: [] });
-        const request = requestsStore.requests.find((entry) => entry.id === requestId);
-        if (!request)
-            throw new Error('Request not found');
-        if (request.accessTokenHash) {
-            const tokenMatch = accessToken && request.accessTokenHash === hashAccessToken(accessToken);
-            if (!tokenMatch) {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
-        }
-        const demoMode = process.env.DEMO_MODE !== 'false';
-        if (!demoMode && !txHash && !creditTxHash) {
-            throw new Error('On-chain payment or credits transaction required before fulfillment');
-        }
-        if (request.status === 'FULFILLED') {
-            if (request.outputEncrypted) {
-                const key = await getOutputEncryptionKey();
-                const decrypted = decryptPayload(request.outputEncrypted, key);
-                return res.json({ requestId, output: decrypted, status: request.status });
-            }
-            return res.json({ requestId, output: request.output, status: request.status });
-        }
-        let output;
-        try {
-            const agentsStore = await readJson(agentsPath, { agents: [] });
-            const agentEntry = agentsStore.agents.find((agent) => agent.id === request.agentId);
-            output =
-                (await callExternalModel(agentEntry, {
-                    requestId: request.id,
-                    agentId: request.agentId,
-                    prompt: request.prompt,
-                    requester: request.useCredits ? 'credits:anonymous' : request.requester,
-                    requestHash: request.requestHash
-                })) ||
-                    (await simulateModel({
-                        agentId: request.agentId,
-                        prompt: request.prompt,
-                        requestId: request.id
-                    }));
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : 'Model failed';
-            throw new Error(message);
-        }
-        const cleanedOutput = sanitizeModelOutput(output);
-        const normalizedOutputRaw = cleanedOutput && typeof cleanedOutput === 'object' && Array.isArray(cleanedOutput.outputs)
-            ? cleanedOutput
-            : { outputs: [cleanedOutput] };
-        const normalizedOutput = normalizeOutputActions(normalizedOutputRaw);
-        const outputSummary = {
-            outputs: (normalizedOutput.outputs || []).map((entry) => ({
-                symbol: entry?.symbol ?? 'N/A',
-                action: entry?.action ?? 'NEUTRAL',
-                confidence: entry?.confidence ?? null
-            }))
-        };
-        const outputString = stableStringify(normalizedOutput);
-        const outputHash = hashToField(outputString);
-        const outputLeaf = computeOutputLeaf(Field.fromJSON(request.requestHash), outputHash);
-        const outputCommit = await commitOutputLeaf(outputLeaf);
-        const oracleKey = getOracleKey();
-        const oraclePk = oracleKey.toPublicKey();
-        const outputSignature = Signature.create(oracleKey, [
-            Field.fromJSON(request.requestHash),
-            outputHash,
-            outputCommit.newRoot
-        ]);
-        const outputKey = await getOutputEncryptionKey();
-        const encryptedOutput = encryptPayload(normalizedOutput, outputKey);
-        const ipfsResult = await uploadEncryptedToIpfs({
-            requestId: request.id,
-            outputHash: outputHash.toJSON(),
-            encrypted: encryptedOutput
-        });
-        request.status = 'FULFILLED';
-        request.txHash = txHash ?? request.txHash ?? 'mock';
-        if (creditTxHash) {
-            request.creditTxHash = creditTxHash;
-        }
-        request.output = null;
-        request.outputSummary = outputSummary;
-        request.outputEncrypted = encryptedOutput;
-        if (ipfsResult?.cid) {
-            request.outputCid = ipfsResult.cid;
-            request.outputGateway = ipfsResult.gateway;
-        }
-        request.outputProof = {
-            requestHash: request.requestHash,
-            outputHash: outputHash.toJSON(),
-            oraclePublicKey: oraclePk.toBase58(),
-            signature: outputSignature.toJSON(),
-            merkleRoot: outputCommit.newRoot.toJSON(),
-            merkleIndex: outputCommit.index,
-            merkleWitness: outputCommit.witness
-        };
-        request.fulfilledAt = new Date().toISOString();
-        await writeJson(requestsPath, requestsStore);
-        res.json({
-            requestId,
-            output,
-            status: request.status,
-            outputProof: request.outputProof,
-            outputCid: ipfsResult?.cid || null,
-            outputGateway: ipfsResult?.gateway || null
-        });
+        const result = await fulfillCore({ requestId, txHash, creditTxHash, accessToken });
+        res.json(result);
     }
     catch (err) {
+        if (err instanceof Error && err.statusCode === 403) {
+            return res.status(403).json({ error: err.message });
+        }
         const message = err instanceof Error ? err.message : 'Fulfillment failed';
         res.status(400).json({ error: message });
     }

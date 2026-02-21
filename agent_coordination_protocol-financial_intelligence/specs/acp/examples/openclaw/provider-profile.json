@@ -1,0 +1,18 @@
+{
+  "name": "zeko-financial-provider",
+  "protocol": "acp",
+  "version": "0.1",
+  "baseUrl": "https://agent-coordination-protocol-financial.onrender.com",
+  "capabilitiesEndpoint": "/.well-known/acp-capabilities.json",
+  "intentEndpoint": "/acp/intent",
+  "fulfillEndpoint": "/acp/fulfill",
+  "paymentModes": [
+    "pay_per_request",
+    "credits"
+  ],
+  "notes": [
+    "Use pay_per_request for strict one-request-one-payment flows.",
+    "Use credits for high-frequency autonomous loops with relayer UX.",
+    "Result actions are normalized to positive/negative/neutral."
+  ]
+}

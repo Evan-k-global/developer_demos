@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ACP Input",
+  "type": "object",
+  "required": [
+    "requestId",
+    "serviceId",
+    "prompt",
+    "timestamp"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "serviceId": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "string"
+    },
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
