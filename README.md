@@ -14,8 +14,8 @@ A collection of production-minded demos for building zero-knowledge apps and age
 - Node.js 20+
 - npm 10+
 - Git
-- Auro Wallet extension
-- Zeko testnet funds (faucet)
+- Auro Wallet extension (for humans)
+- Zeko testnet funds via faucet and bridge
 
 ## Core docs and links
 
