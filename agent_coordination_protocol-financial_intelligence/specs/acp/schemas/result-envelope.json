@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ACP Result Envelope",
+  "type": "object",
+  "required": [
+    "requestId",
+    "serviceId",
+    "status",
+    "outputHash",
+    "output"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "serviceId": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "failed"
+      ]
+    },
+    "outputHash": {
+      "type": "string"
+    },
+    "output": {
+      "$ref": "./output.json"
+    },
+    "attestation": {
+      "type": "object",
+      "properties": {
+        "txHash": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "contract": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceProof": {
+      "type": "object",
+      "properties": {
+        "sourceProofHash": {
+          "type": "string"
+        },
+        "sourceTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sourceOrigin": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

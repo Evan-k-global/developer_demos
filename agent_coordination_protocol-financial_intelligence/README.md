@@ -46,6 +46,7 @@ npm run dev
 
 - Auro Wallet: [Get Auro](https://www.aurowallet.com/)
 - Zeko Testnet Faucet: [faucet.zeko.io](https://faucet.zeko.io/)
+- Troubleshooting: `docs/auro-transaction-troubleshooting.md`
 
 ## Registering Your Model (Step‑by‑Step)
 
@@ -455,11 +456,16 @@ MetaMask users must install the snap and create a Mina account using the Mina Po
 Note: Mina Portal snap support for Zeko testnet is not guaranteed; as of the published docs it
 targets the Mina Berkeley testnet, so Zeko support may require a snap fork or network extension.
 
-### Forking Mina Snap for Zeko (recommended)
+### Mina Snap isolation strategy (recommended)
 
-We cloned the Mina snap repo to `/Users/evankereiakes/Documents/Codex/app1/mina-snap-fork` and added a
-**Zeko Testnet** network entry in the snap + site. You can run it locally as a Snap and point this
-app to it:
+Treat Mina Snap as an external dependency and keep this repository focused on the marketplace
+protocol. Preferred setup:
+
+1. Keep upstream snap in its own repo/worktree (or git submodule/subtree).
+2. Maintain a small local patch set for Zeko-specific changes.
+3. Reference upstream docs/releases, and only carry minimal Zeko overrides here.
+
+Local dev flow:
 
 ```bash
 cd /Users/evankereiakes/Documents/Codex/app1/mina-snap-fork
@@ -678,3 +684,19 @@ at any time without affecting escrowed user funds.
 This protocol works the same for **humans and autonomous agents**. Agents can skip the UI entirely
 and use the CLI or direct HTTP calls. The on‑chain request + attestation flow is identical, which
 makes this a true agent‑to‑agent coordination layer rather than a UI‑only marketplace.
+
+## Agent Coordination Protocol (ACP) Specification
+
+This repo includes the **Agent Coordination Protocol (ACP)** spec, which generalizes the current
+financial marketplace into a domain-agnostic coordination protocol for paid agent services.
+
+- Spec entrypoint: `specs/acp/README.md`
+- Full protocol doc: `specs/acp/acp-v0.1.md`
+- JSON Schemas: `specs/acp/schemas/`
+- OpenClaw integration examples: `specs/acp/examples/openclaw/`
+
+### OpenClaw compatibility
+
+ACP is designed to be OpenClaw-compatible via capability discovery (`capabilities.json`) and a
+standardized request/payment/result lifecycle. OpenClaw is a primary orchestration target, while
+ACP remains runtime-agnostic for other autonomous-agent stacks.
