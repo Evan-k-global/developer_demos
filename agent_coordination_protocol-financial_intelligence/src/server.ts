@@ -3214,12 +3214,29 @@ async function simulateModel({ agentId, prompt, requestId }: { agentId: string; 
         const action = forcedAction ?? classifyAction(score);
         let priceSeries: Array<{ date: string; close: number }> = [];
         let hasPrice = false;
+        let priceSeriesSource = symbol;
         try {
           const series = await getPriceSeries(symbol);
           priceSeries = series.slice(-30);
           hasPrice = series.length > 1;
         } catch {
           // ignore price failures
+        }
+
+        if (!hasPrice) {
+          for (const proxy of ['SPY', 'QQQ', 'AAPL']) {
+            try {
+              const proxySeries = await getPriceSeries(proxy);
+              if (proxySeries.length > 1) {
+                priceSeries = proxySeries.slice(-30);
+                hasPrice = true;
+                priceSeriesSource = proxy;
+                break;
+              }
+            } catch {
+              // ignore proxy price failures
+            }
+          }
         }
 
         if (!hasSecData) {
@@ -3240,7 +3257,7 @@ async function simulateModel({ agentId, prompt, requestId }: { agentId: string; 
           }
         }
 
-        if (!hasSecData || !hasPrice) {
+        if (!hasSecData) {
           const cachedKey = `last_edgar_${symbol.toUpperCase()}`;
           const cached = await readEdgarCache<any>(cachedKey, Infinity);
           if (cached) {
@@ -3248,7 +3265,6 @@ async function simulateModel({ agentId, prompt, requestId }: { agentId: string; 
           }
           const missing: string[] = [];
           if (!hasSecData) missing.push('SEC data');
-          if (!hasPrice) missing.push('price series');
           throw new Error(`EDGAR Scout requires ${missing.join(' and ')}.`);
         }
         const payload = {
@@ -3259,7 +3275,10 @@ async function simulateModel({ agentId, prompt, requestId }: { agentId: string; 
             `${symbol} ${latestFiling.type} on ${latestFiling.date}: ${latestFiling.summary}`,
             `${profitSource}: ${(profitGrowth * 100).toFixed(1)}%`,
             `${revenueSource}: ${(revenueGrowth * 100).toFixed(1)}%`,
-            `Price reaction strength: ${priceMomentum.toFixed(2)}`
+            `Price reaction strength: ${priceMomentum.toFixed(2)}`,
+            hasPrice
+              ? `Price series source: ${priceSeriesSource}`
+              : 'Price series unavailable; using filing + momentum-only signal'
           ],
           highlights: highlightsLocal,
           priceSeries
