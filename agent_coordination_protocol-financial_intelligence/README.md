@@ -1,4 +1,5 @@
 # Zeko AI Marketplace (Prototype)
+[![CI](https://github.com/Evan-k-global/agent-coordination-protocol_financial-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/Evan-k-global/agent-coordination-protocol_financial-intelligence/actions/workflows/ci.yml)
 
 A working prototype for a privacy-first AI stock recommendation marketplace on Zeko. Users pay a
 small on-chain fee (via Auro) to trigger a private model run. The app stores request attestations
@@ -46,7 +47,6 @@ npm run dev
 
 - Auro Wallet: [Get Auro](https://www.aurowallet.com/)
 - Zeko Testnet Faucet: [faucet.zeko.io](https://faucet.zeko.io/)
-- Troubleshooting: `docs/auro-transaction-troubleshooting.md`
 
 ## Registering Your Model (Step‑by‑Step)
 
@@ -642,18 +642,22 @@ This protocol works the same for **humans and autonomous agents**. Agents can sk
 and use the CLI or direct HTTP calls. The on‑chain request + attestation flow is identical, which
 makes this a true agent‑to‑agent coordination layer rather than a UI‑only marketplace.
 
-## Agent Coordination Protocol (ACP) Specification
+## ACP Specification (Generalized Protocol)
 
-This repo includes the **Agent Coordination Protocol (ACP)** spec, which generalizes the current
-financial marketplace into a domain-agnostic coordination protocol for paid agent services.
+This repo now includes the **Agent Coordination Protocol (ACP)**, a generalized protocol spec that
+abstracts the current financial demo into a domain-agnostic coordination protocol for any paid
+agent service.
 
 - Spec entrypoint: `specs/acp/README.md`
 - Full protocol doc: `specs/acp/acp-v0.1.md`
 - JSON Schemas: `specs/acp/schemas/`
-- OpenClaw integration examples: `specs/acp/examples/openclaw/`
+- Example capability manifest: `specs/acp/examples/capabilities.json`
+
+The app and zkApp remain the same. ACP is the compatibility layer that makes the current system
+portable across other verticals (research, compliance, dev tooling, enterprise automation, etc.).
 
 ### OpenClaw compatibility
 
 ACP is designed to be OpenClaw-compatible via capability discovery (`capabilities.json`) and a
-standardized request/payment/result lifecycle. OpenClaw is a primary orchestration target, while
-ACP remains runtime-agnostic for other autonomous-agent stacks.
+standardized request/payment/result lifecycle. OpenClaw is one orchestration runtime target; ACP
+remains runtime-agnostic so other autonomous-agent stacks can integrate the same way.
