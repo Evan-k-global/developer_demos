@@ -271,7 +271,7 @@ async function loadProofsFeed() {
 }
 
 function renderAgents() {
-  const sortKey = agentSort?.value || 'popularity';
+  const sortKey = agentSort?.value || 'success';
   const sorted = [...agents].sort((a, b) => {
     if (sortKey === 'success') {
       return (b.cagr30d || 0) - (a.cagr30d || 0);
