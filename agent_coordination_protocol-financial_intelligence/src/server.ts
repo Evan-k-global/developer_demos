@@ -41,6 +41,9 @@ const massiveS3Region = process.env.MASSIVE_S3_REGION || 'us-east-1';
 const massiveS3ForcePathStyle = process.env.MASSIVE_S3_FORCE_PATH_STYLE !== 'false';
 const massiveS3Insecure = process.env.MASSIVE_S3_INSECURE === 'true';
 const massiveFlatfilesMode = process.env.MASSIVE_FLATFILES_MODE || 'targeted';
+const priceFetchMode = (process.env.PRICE_FETCH_MODE || 'live').toLowerCase();
+const dailyPriceMode = priceFetchMode === 'daily';
+const backupKeepCount = Math.max(1, Number(process.env.DATA_BACKUP_KEEP_COUNT || 14));
 const massiveFlatfilesStocksPrefix =
   process.env.MASSIVE_FLATFILES_STOCKS_PREFIX || 'us_stocks_sip/day_aggs_v1';
 const massiveFlatfilesCryptoPrefix =
@@ -369,13 +372,66 @@ async function readJson<T>(filePath: string, fallback: T): Promise<T> {
   try {
     const raw = await fs.readFile(filePath, 'utf8');
     return JSON.parse(raw) as T;
-  } catch {
+  } catch (err) {
+    // If primary JSON is temporarily corrupted/truncated, try latest local backup.
+    try {
+      const dir = path.dirname(filePath);
+      const base = path.basename(filePath);
+      const entries = await fs.readdir(dir);
+      const backups = entries
+        .filter((name) => name.startsWith(`${base}.bak.`))
+        .sort((a, b) => b.localeCompare(a));
+      if (backups.length > 0) {
+        const raw = await fs.readFile(path.join(dir, backups[0]), 'utf8');
+        return JSON.parse(raw) as T;
+      }
+    } catch {
+      // ignore backup recovery failures
+    }
     return fallback;
   }
 }
 
+const writeQueues = new Map<string, Promise<void>>();
+async function pruneFileBackups(filePath: string, keep = backupKeepCount) {
+  try {
+    const dir = path.dirname(filePath);
+    const base = path.basename(filePath);
+    const entries = await fs.readdir(dir);
+    const backups = entries
+      .filter((name) => name.startsWith(`${base}.bak.`))
+      .map((name) => path.join(dir, name))
+      .sort((a, b) => b.localeCompare(a));
+    const stale = backups.slice(keep);
+    await Promise.all(stale.map((target) => fs.rm(target, { force: true })));
+  } catch {
+    // ignore backup pruning failures
+  }
+}
+
 async function writeJson(filePath: string, payload: unknown) {
-  await fs.writeFile(filePath, JSON.stringify(payload, null, 2));
+  const run = async () => {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    const body = JSON.stringify(payload, null, 2);
+    const tmpPath = `${filePath}.tmp.${process.pid}.${Date.now()}`;
+    // Best-effort rolling backup for critical mutable stores.
+    const base = path.basename(filePath);
+    if (base === 'requests.json' || base === 'agents.json') {
+      try {
+        const bakPath = `${filePath}.bak.${Date.now()}`;
+        await fs.copyFile(filePath, bakPath);
+        await pruneFileBackups(filePath);
+      } catch {
+        // ignore missing source or backup errors
+      }
+    }
+    await fs.writeFile(tmpPath, body, 'utf8');
+    await fs.rename(tmpPath, filePath);
+  };
+  const prev = writeQueues.get(filePath) || Promise.resolve();
+  const next = prev.then(run, run);
+  writeQueues.set(filePath, next.catch(() => {}));
+  await next;
 }
 
 async function readCreditsLedger() {
@@ -2159,10 +2215,25 @@ async function fetchMassiveDaily(symbol: string, isCrypto: boolean) {
 
 async function fetchBestPriceSeries(symbol: string) {
   const crypto = await isCryptoSymbol(symbol);
+  const cached = await readPriceCache(symbol);
+
+  if (dailyPriceMode) {
+    try {
+      const flatfile = await readFlatfileSeries(symbol);
+      if (flatfile.length > 1) {
+        const merged = mergeSeries(cached, flatfile);
+        await writePriceCache(symbol, merged);
+        return merged;
+      }
+    } catch {
+      // ignore and fall back to cache
+    }
+    return cached;
+  }
+
   try {
     const twelve = await fetchTwelveDataDaily(symbol, crypto);
     if (twelve.length > 1) {
-      const cached = await readPriceCache(symbol);
       const merged = mergeSeries(cached, twelve);
       await writePriceCache(symbol, merged);
       return merged;
@@ -2175,7 +2246,6 @@ async function fetchBestPriceSeries(symbol: string) {
     if (shouldUseMassive()) {
       const massive = await fetchMassiveDaily(symbol, crypto);
       if (massive.length > 1) {
-        const cached = await readPriceCache(symbol);
         const merged = mergeSeries(cached, massive);
         await writePriceCache(symbol, merged);
         return merged;
@@ -2190,7 +2260,6 @@ async function fetchBestPriceSeries(symbol: string) {
     try {
       const alpha = await fetchAlphaVantageDaily(symbol, crypto);
       if (alpha.length > 1) {
-        const cached = await readPriceCache(symbol);
         const merged = mergeSeries(cached, alpha);
         await writePriceCache(symbol, merged);
         return merged;
@@ -2203,7 +2272,6 @@ async function fetchBestPriceSeries(symbol: string) {
   try {
     const flatfile = await readFlatfileSeries(symbol);
     if (flatfile.length > 1) {
-      const cached = await readPriceCache(symbol);
       const merged = mergeSeries(cached, flatfile);
       await writePriceCache(symbol, merged);
       return merged;
@@ -2212,7 +2280,6 @@ async function fetchBestPriceSeries(symbol: string) {
     // ignore and fall back to cache
   }
 
-  const cached = await readPriceCache(symbol);
   return cached;
 }
 
@@ -3678,7 +3745,8 @@ app.get('/api/config', (_req, res) => {
     treasury: resolveTreasuryKey(),
     relayerPublicKey: getRelayerPublicKey(),
     platformFeeMina,
-    creditsMinDeposit
+    creditsMinDeposit,
+    priceFetchMode
   });
 });
 
