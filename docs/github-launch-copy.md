@@ -2,7 +2,7 @@
 
 ## Repository name
 
-`tokenized_asset_platform`
+`private-tokenized-asset-protocol`
 
 ## Short description
 
@@ -16,7 +16,7 @@ TAP is a self-hostable control plane for private consortium asset tokenization: 
 
 If you want to set a repository website, use the architecture post or your main project site:
 
-- `https://github.com/Evan-k-global/tokenized_asset_platform/blob/main/docs/blog-private-tokenized-asset-protocol.md`
+- `https://github.com/Evan-k-global/private-tokenized-asset-protocol/blob/main/docs/blog-private-tokenized-asset-protocol.md`
 - or your external project URL if you have one
 
 ## Suggested social preview text
