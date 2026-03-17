@@ -1,4 +1,4 @@
-# Tokenized Asset Protocol (Demo Scaffold)
+# Tokenized Asset Protocol (Pilot Scaffold)
 
 Private sovereign rollup protocol scaffold for consortium stablecoin issuance with privacy-preserving compliance proofs and Ethereum bridge rails.
 

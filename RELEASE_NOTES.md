@@ -1,6 +1,6 @@
 # Release Notes
 
-## v1-demo-rc1 (2026-03-09)
+## v1-pilot-rc1 (2026-03-09)
 
 This release candidate pins a working self-hosted enterprise demo flow for:
 - policy-linked settlement checks,
