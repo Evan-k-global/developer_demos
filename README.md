@@ -10,6 +10,55 @@ Private sovereign rollup protocol scaffold for consortium stablecoin issuance wi
 - Bridge path to public Ethereum stablecoin rails
 - Forkable infrastructure and local demo workflow
 
+## Architecture Snapshots
+
+### Private control plane and public bridge rails
+
+```mermaid
+flowchart LR
+  A["Bank / Consortium Source Systems"] --> B["TAP Control Plane on Zeko-side Infrastructure"]
+  B --> C["Private Stablecoin Ledger"]
+  B --> D["Private Tokenized Stock Ledger"]
+  B --> E["Policy Engine + Proof Verification"]
+  B --> F["Maker-Checker + Issuer Controls"]
+
+  C --> G["Bridge / Exit Rail"]
+  D --> G
+
+  G --> H["Public Ethereum Asset Rails"]
+
+  H --> I["Public Stablecoin Representation"]
+  H --> J["Public Settlement / Distribution Venues"]
+
+  K["Customer / Institution Deposit from Ethereum"] --> H
+  H --> L["Bridge / Entry Rail"]
+  L --> B
+```
+
+### Proof-linked state transition flow
+
+```mermaid
+flowchart LR
+  A["Source data or attestation"] --> B["Source Adapters / zkTLS"]
+  B --> C["Canonical evidence"]
+  C --> D["Policy Engine"]
+  D --> E["Proof Generation / Verification"]
+  E --> F["Issuer Workflow Approval"]
+  F --> G["Settlement Record"]
+  G --> H["Private asset state transition"]
+```
+
+### Customer sandbox onboarding path
+
+```mermaid
+flowchart LR
+  A["Customer sandbox packet"] --> B["Mapping kit + bootstrap templates"]
+  B --> C["Customer-owned adapters / zkTLS sources"]
+  C --> D["TAP policy + proof flow"]
+  D --> E["Transcript pack + pilot artifact"]
+  E --> F["Production integration plan"]
+```
+
 ## Delivery Model (Self-Hosted)
 
 This project is packaged for bank/consortium teams to run themselves.

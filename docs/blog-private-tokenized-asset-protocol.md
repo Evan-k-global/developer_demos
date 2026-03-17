@@ -107,6 +107,63 @@ flowchart LR
   M --> N["Public Ethereum / Other Settlement Rails"]
 ```
 
+### Private rollup operating layer vs public Ethereum rails
+
+```mermaid
+flowchart LR
+  A["Bank / Consortium Source Systems"] --> B["TAP Control Plane on Zeko-side Infrastructure"]
+  B --> C["Private Stablecoin Ledger"]
+  B --> D["Private Tokenized Stock Ledger"]
+  B --> E["Policy Engine + Proof Verification"]
+  B --> F["Maker-Checker + Issuer Controls"]
+
+  C --> G["Bridge / Exit Rail"]
+  D --> G
+
+  G --> H["Public Ethereum Asset Rails"]
+
+  H --> I["Public Stablecoin Representation"]
+  H --> J["Public Settlement / Distribution Venues"]
+
+  K["Customer / Institution Deposit from Ethereum"] --> H
+  H --> L["Bridge / Entry Rail"]
+  L --> B
+```
+
+This is the split that matters:
+
+- Zeko-side infrastructure is the private operating environment
+- Ethereum is the public interoperability and distribution rail
+- the bridge is the controlled path between the two
+
+### Control-plane flow from source truth to private state transition
+
+```mermaid
+flowchart LR
+  A["Source data or attestation"] --> B["Source Adapters / zkTLS"]
+  B --> C["Canonical evidence"]
+  C --> D["Policy Engine"]
+  D --> E["Proof Generation / Verification"]
+  E --> F["Issuer Workflow Approval"]
+  F --> G["Settlement Record"]
+  G --> H["Private asset state transition"]
+```
+
+This is the core TAP claim: private tokenized assets should not move because a front end says they can move. They should move because source evidence, policy state, proof verification, and issuer controls all agree that the transition is allowed.
+
+### Customer-owned integration path
+
+```mermaid
+flowchart LR
+  A["Customer sandbox packet"] --> B["Mapping kit + bootstrap templates"]
+  B --> C["Customer-owned adapters / zkTLS sources"]
+  C --> D["TAP policy + proof flow"]
+  D --> E["Transcript pack + pilot artifact"]
+  E --> F["Production integration plan"]
+```
+
+That final diagram matters for go-to-market. TAP is not supposed to be a closed hosted product that only works with pre-approved vendors. The public repo proves the architecture. The customer-owned integration path proves how a bank or consortium can bring its own systems and turn the repo into a real pilot.
+
 This is not just a “proof pipeline.”
 
 It is a control plane where:
