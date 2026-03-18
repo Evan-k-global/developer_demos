@@ -48,17 +48,6 @@ flowchart LR
   G --> H["Private asset state transition"]
 ```
 
-### Customer sandbox onboarding path
-
-```mermaid
-flowchart LR
-  A["Customer sandbox packet"] --> B["Mapping kit + bootstrap templates"]
-  B --> C["Customer-owned adapters / zkTLS sources"]
-  C --> D["TAP policy + proof flow"]
-  D --> E["Transcript pack + pilot artifact"]
-  E --> F["Production integration plan"]
-```
-
 ## Delivery Model (Self-Hosted)
 
 This project is packaged for bank/consortium teams to run themselves.
