@@ -67,22 +67,6 @@ flowchart LR
   H --> I["Private Asset State Transition"]
 ```
 
-### Dual-asset market structure
-
-```mermaid
-flowchart LR
-  A["TAP Control Plane"] --> B["Private Stablecoin Rail"]
-  A --> C["Private Tokenized Stock Rail"]
-
-  B --> D["Payments, Treasury, Cash Settlement"]
-  C --> E["Issuance, Allocation, Restricted Trading"]
-
-  D --> F["Consortium Market Activity"]
-  E --> F
-
-  F --> G["Optional Bridge to Ethereum"]
-```
-
 ## What’s In The Repo
 
 ### Apps
