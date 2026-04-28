@@ -16,6 +16,11 @@ A collection of practical demos for building zero-knowledge apps and agent syste
   - Credits + relayer path for better UX/privacy
   - Verifiable performance metrics and proofs feed
 
+- `zeko_ai_runtime`
+  - Zeko-native verifiable AI runtime for builders
+  - Private inputs, encrypted outputs, and attestable receipts
+  - Membership-first operator routing, fast credits, and compatibility adapters
+
 - `proof_over_hype_ai_image_provenance`
   - Provenance-oriented AI image workflow
   - Verifiable metadata/claims pattern for generated media
