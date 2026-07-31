@@ -1,6 +1,6 @@
 # Status And Next Steps
 
-Last updated: 2026-03-16
+Last updated: 2026-07-30
 
 ## Current Status
 
@@ -39,6 +39,8 @@ The current public story is:
 - tenant provider config is working
 - policy versioning and settlement-time policy guard are working
 - maker-checker issuance controls are working
+- executable bank RWA profile bootstrap is working
+- asset master registry and checker-governed lifecycle transitions are working
 
 ### Proof And Verification
 
@@ -58,6 +60,8 @@ The current public story is:
 - stock lifecycle transcript exists
 - dual-asset flagship transcript exists
 - public-pack output and flagship alias exist
+- bank RWA integration profile and readiness validator exist
+- bank RWA profile compiler can seed providers, draft asset records, and active policies
 
 ## What This Means
 
@@ -106,6 +110,7 @@ Needed:
 - continue tightening the onboarding packet and partner-facing integration path
 - keep the workflow explicit:
   - collect packet
+  - fill and validate the bank RWA integration profile
   - map source to adapter or zkTLS
   - wire customer sandbox
   - generate customer-specific transcript pack

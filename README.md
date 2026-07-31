@@ -1,8 +1,10 @@
-# Tokenized Asset Protocol (Pilot Scaffold)
+# Tokenized Asset Protocol
 
-TAP is a self-hostable control plane for private, permissioned tokenized assets.
+Tokenized Asset Protocol (TAP) is a self-hosted control plane for private, permissioned tokenized assets.
 
-It is built for the model we expect institutions to actually want: private consortium stablecoins, private tokenized stocks and funds, proof-linked compliance, verifiable off-chain source inputs, and optional bridge rails to public Ethereum when interoperability matters.
+It is designed for institutions that want to issue and manage stablecoins, tokenized stocks, and other assets inside a private consortium environment, verify off-chain source data with proofs, and selectively bridge assets or settlement activity to Ethereum when public interoperability is useful.
+
+TAP is the private operating layer. Ethereum is the optional public rail.
 
 ## Why TAP
 
@@ -30,56 +32,27 @@ TAP is designed around a different model:
 ### Private operating layer and public bridge rails
 
 ```mermaid
-flowchart TD
-  A["Institutional source systems"] --> B["TAP control plane"]
-  B --> C["Policy and proof layer"]
-  C --> D["Private consortium asset state"]
-  D --> E["Bridge rails"]
-  E --> F["Public Ethereum settlement and distribution"]
+flowchart LR
+  A["Bank / Consortium Source Systems"] --> B["TAP Control Plane on Zeko-side Infrastructure"]
+  B --> C["Private Stablecoin Ledger"]
+  B --> D["Private Tokenized Stock Ledger"]
+  B --> E["Policy Engine + Proof Verification"]
+  B --> F["Maker-Checker + Issuer Controls"]
+
+  C --> G["Bridge / Exit Rail"]
+  D --> G
+
+  G --> H["Public Ethereum Asset Rails"]
+
+  H --> I["Public Stablecoin Representation"]
+  H --> J["Public Settlement / Distribution Venues"]
+
+  K["Customer / Institution Deposit from Ethereum"] --> H
+  H --> L["Bridge / Entry Rail"]
+  L --> B
 ```
 
-### Parallel asset model
-
-```mermaid
-flowchart TD
-  A["TAP control plane"] --> B["Private stablecoin rail"]
-  A --> C["Private tokenized stock rail"]
-
-  B --> D["Consortium payments, treasury, settlement"]
-  C --> E["Private issuance, allocation, restricted trading"]
-
-  D --> F["Optional bridge to Ethereum"]
-  E --> F
-```
-
-### Decision flow
-
-```mermaid
-flowchart TD
-  A["Source evidence"] --> B["Policy evaluation"]
-  B --> C["Proof verification"]
-  C --> D["Issuer approval controls"]
-  D --> E["Settlement record"]
-  E --> F["Private asset state transition"]
-```
-
-### API adapter and zkTLS input lanes
-
-```mermaid
-flowchart TD
-  A["Institutional source systems"] --> B["API adapter lane"]
-  A --> C["zkTLS attestation lane"]
-
-  B --> D["Canonical source evidence"]
-  C --> D
-
-  D --> E["Policy evaluation"]
-  E --> F["Proof verification"]
-  F --> G["Issuer approval controls"]
-  G --> H["Private asset state transition"]
-```
-
-## What’s In The Repo
+## What Is Included
 
 ### Apps
 
@@ -91,6 +64,7 @@ flowchart TD
 ### Core packages
 
 - `packages/policy-engine`: versioned policy registry and policy hashing
+- `packages/asset-registry`: asset master records and governed lifecycle transitions
 - `packages/prover-service`: proof generation and verification lanes
 - `packages/source-adapters`: partner API and generic REST adapter layer
 - `packages/attestor-service`: statement, phone, and zkTLS attestation handling
@@ -106,9 +80,27 @@ flowchart TD
 - bank onboarding and pilot collateral
 - launch docs and architecture writeups
 
-## Run The Flagship Pilot
+## Quick Start
 
-The quickest way to understand TAP is to run the dual-asset flagship pilot.
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Validate the bank RWA integration profile:
+
+```bash
+pnpm validate:bank-profile
+```
+
+Compile it into a TAP bootstrap plan:
+
+```bash
+pnpm compile:bank-profile -- docs/examples/bank-rwa-integration-profile.example.json
+```
+
+Run the dual-asset flagship pilot:
 
 ```bash
 ./scripts/run_dual_asset_flagship_pack.sh
@@ -120,7 +112,7 @@ That flow proves:
 - private tokenized stock lifecycle controls
 - one shared policy, proof, approval, and settlement control plane
 
-For the broader release-oriented pack:
+For the broader release-oriented pack, run:
 
 ```bash
 ./scripts/run_enterprise_demo_pack.sh
@@ -138,28 +130,47 @@ TAP is meant to be adapted to a bank, issuer, broker, custodian, or consortium�
 The customer integration path is:
 
 1. fill out the onboarding packet
-2. map the customer’s API or HTTPS source into TAP
-3. run a customer-owned pilot transcript
-4. convert that pilot into a production integration plan
+2. fill and validate the bank RWA integration profile
+3. map the customer’s API or HTTPS source into TAP
+4. run a customer-owned pilot transcript
+5. convert that pilot into a production integration plan
 
 Start here:
 
 - `docs/bank-sandbox-onboarding-packet.md`
+- `docs/bank-rwa-integration-profile.md`
 - `docs/customer-sandbox-mapping-kit.md`
 - `docs/first-customer-integration-template.md`
 - `docs/examples/customer-owned-dual-asset-sandbox-example.md`
 
 ## Key Docs
 
-If you are new to the repo, start with these:
+For implementers:
+
+- `docs/flagship-runbook.md`
+- `docs/runbook.md`
+- `docs/api.md`
+- `docs/openapi.yaml`
+
+For bank integration teams:
+
+- `docs/bank-rwa-integration-profile.md`
+- `docs/customer-sandbox-mapping-kit.md`
+- `docs/provider-strategy.md`
+- `docs/production-readiness.md`
+
+For protocol reviewers:
+
+- `docs/spec/README.md`
+- `docs/threat-model.md`
+- `docs/external-zktls-adaptations.md`
+- `docs/zk-audit-and-compliance-app.md`
+
+For narrative and launch material:
 
 - `docs/blog-private-tokenized-asset-protocol.md`
-- `docs/flagship-runbook.md`
-- `docs/provider-strategy.md`
-- `docs/spec/README.md`
-- `docs/status-and-next-steps.md`
-- `docs/external-zktls-adaptations.md`
 - `docs/launch/`
+- `docs/status-and-next-steps.md`
 
 ## Current State
 

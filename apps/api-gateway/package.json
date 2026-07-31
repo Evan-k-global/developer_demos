@@ -11,6 +11,7 @@
     "test": "pnpm run build && node --test dist/*.test.js"
   },
   "dependencies": {
+    "@tap/asset-registry": "workspace:*",
     "@tap/attestor-service": "workspace:*",
     "@tap/compliance-engine": "workspace:*",
     "@tap/contracts": "workspace:*",

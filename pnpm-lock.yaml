@@ -10,6 +10,9 @@ importers:
 
   apps/api-gateway:
     dependencies:
+      '@tap/asset-registry':
+        specifier: workspace:*
+        version: link:../../packages/asset-registry
       '@tap/attestor-service':
         specifier: workspace:*
         version: link:../../packages/attestor-service
@@ -177,6 +180,19 @@ importers:
       vite:
         specifier: ^6.0.5
         version: 6.4.1(@types/node@25.3.0)(tsx@4.21.0)
+
+  packages/asset-registry:
+    dependencies:
+      '@tap/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.11
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
   packages/attestor-service:
     dependencies:

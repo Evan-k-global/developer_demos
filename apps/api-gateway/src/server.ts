@@ -27,6 +27,7 @@ import {
   StockIssueRequestSchema,
   StockRedeemRequestSchema,
   StockRestrictionRequestSchema,
+  TransitionAssetLifecycleRequestSchema,
   type AuthProfile,
   type BurnRequest,
   type MintRequest,
@@ -41,6 +42,7 @@ import {
   TenantProviderConfigSchema,
   TransferComplianceProofRequestSchema,
   TransferRequestSchema,
+  UpsertAssetRegistryRequestSchema,
   UpsertIssuerControlConfigRequestSchema,
   UpsertRiskConfigRequestSchema,
   UpsertPolicyRequestSchema,
@@ -49,6 +51,14 @@ import {
   ZkTlsBankSourceSchema,
   ZkTlsEmployerSourceSchema
 } from '@tap/shared-types';
+import {
+  getAsset,
+  listAssetLifecycleEvents,
+  listAssets,
+  resetAssetRegistry,
+  transitionAsset,
+  upsertAsset
+} from '@tap/asset-registry';
 import {
   generateEligibilityProof,
   generateTransferComplianceProof,
@@ -1195,6 +1205,7 @@ app.post('/api/v1/admin/demo/reset', async (req, res) => {
   if (!requireAdmin(actor, res)) return;
 
   await resetSettlementStore();
+  await resetAssetRegistry();
   mintRequestStore.clear();
   burnRequestStore.clear();
   stockIssueRequestStore.clear();
@@ -2283,6 +2294,69 @@ app.get('/api/v1/tenant/:tenantId/provider-config/:provider', async (req, res) =
   );
   if (!record) return res.status(404).json({ error: 'tenant_provider_config_not_found' });
   res.json(record);
+});
+
+app.post('/api/v1/assets', async (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor) return;
+  if (!requireAdmin(actor, res)) return;
+  const parsed = parseOr400(UpsertAssetRegistryRequestSchema, req.body);
+  if ('error' in parsed) return res.status(400).json(parsed);
+  const asset = await upsertAsset(parsed.data, actor.keyId);
+  res.status(201).json(asset);
+});
+
+app.get('/api/v1/tenant/:tenantId/assets', async (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor) return;
+  const tenantId = String(req.params.tenantId);
+  if (!requireTenantScope(actor, tenantId, res)) return;
+  res.json({ records: await listAssets(tenantId) });
+});
+
+app.get('/api/v1/tenant/:tenantId/assets/:assetId', async (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor) return;
+  const tenantId = String(req.params.tenantId);
+  if (!requireTenantScope(actor, tenantId, res)) return;
+  const assetId = Number(req.params.assetId);
+  if (!Number.isInteger(assetId) || assetId < 0) return res.status(400).json({ error: 'invalid_asset_id' });
+  const asset = await getAsset(tenantId, assetId);
+  if (!asset) return res.status(404).json({ error: 'asset_not_found' });
+  res.json(asset);
+});
+
+app.get('/api/v1/tenant/:tenantId/assets/:assetId/lifecycle', async (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor) return;
+  const tenantId = String(req.params.tenantId);
+  if (!requireTenantScope(actor, tenantId, res)) return;
+  const assetId = Number(req.params.assetId);
+  if (!Number.isInteger(assetId) || assetId < 0) return res.status(400).json({ error: 'invalid_asset_id' });
+  res.json({ records: await listAssetLifecycleEvents(tenantId, assetId) });
+});
+
+app.post('/api/v1/tenant/:tenantId/assets/:assetId/lifecycle', async (req, res) => {
+  const actor = requireActor(req, res);
+  if (!actor) return;
+  if (!requireAnyRole(actor, ['ISSUER_CHECKER'], res)) return;
+  const tenantId = String(req.params.tenantId);
+  if (!requireTenantScope(actor, tenantId, res)) return;
+  const assetId = Number(req.params.assetId);
+  if (!Number.isInteger(assetId) || assetId < 0) return res.status(400).json({ error: 'invalid_asset_id' });
+  const parsed = parseOr400(TransitionAssetLifecycleRequestSchema, req.body);
+  if ('error' in parsed) return res.status(400).json(parsed);
+  try {
+    const result = await transitionAsset(tenantId, assetId, parsed.data, actor.keyId);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === 'asset_not_found') return res.status(404).json({ error: message });
+    if (message.startsWith('asset_transition_not_permitted:')) {
+      return res.status(409).json({ error: message });
+    }
+    throw error;
+  }
 });
 
 app.post('/api/v1/policy/upsert', async (req, res) => {

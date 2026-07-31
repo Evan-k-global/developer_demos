@@ -22,6 +22,19 @@ Deterministic policy records:
 - `effectiveAt`, `status`
 - `policyHash`
 
+## Asset Registry Record
+
+Defines the legal and operational identity of an asset before issuance activity begins:
+
+- `tenantId`, numeric `assetId`, `assetClass`, `symbol`, `displayName`, `issuerId`, `jurisdiction`
+- identifiers such as ISIN, CUSIP, or customer-owned internal codes
+- `legalDocumentHash` for the governing document set
+- service providers: custodian, transfer agent, reserve attestor, administrator
+- lifecycle status: `draft`, `approved`, `active`, `restricted`, `suspended`, `redeemed`, `retired`
+- immutable lifecycle events recording the actor, transition reason, and optional policy or issuer-request linkage
+
+Asset master state is intentionally separate from individual issuer requests. Creating or updating an asset never activates it; `ISSUER_CHECKER` or a consortium admin must advance the lifecycle explicitly.
+
 ## Proof Envelope
 
 - `id`, `circuitId`, `mode`

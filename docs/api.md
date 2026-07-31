@@ -11,7 +11,7 @@ Auth:
 - `GET /health`
 - `GET /config/public`
 - `POST /admin/demo/reset` (admin-only)
-  - clears settlement store, issuer workflow state, source idempotency/usage maps, and local audit files
+  - clears settlement store, asset registry, issuer workflow state, source idempotency/usage maps, and local audit files
   - works for both file-backed and Postgres settlement stores
 - `GET /diag/credentials` (admin-only)
   - reports credential lifecycle and env-presence status by tenant/provider/profile
@@ -176,6 +176,26 @@ Auth:
   - Auth:
     - write requires `CONSORTIUM_ADMIN`
     - read requires tenant scope (`CONSORTIUM_ADMIN` or matching tenant)
+
+## Asset Registry
+
+- `POST /assets`
+  - creates an asset master record in `draft` state, or updates its metadata without changing lifecycle state
+  - admin-only
+  - requires `tenantId`, `assetId`, `assetClass`, `symbol`, `displayName`, `issuerId`, and `jurisdiction`
+  - supports identifiers such as `isin`, `cusip`, or internal codes; legal-document hash; custodian, transfer-agent, reserve-attestor, and administrator references
+- `GET /tenant/:tenantId/assets`
+- `GET /tenant/:tenantId/assets/:assetId`
+- `GET /tenant/:tenantId/assets/:assetId/lifecycle`
+  - reads require tenant scope
+- `POST /tenant/:tenantId/assets/:assetId/lifecycle`
+  - checker or admin only
+  - body: `{ "status", "reason", "policyId?", "policyHash?", "issuerRequestId?" }`
+  - permitted transitions:
+    - `draft -> approved -> active`
+    - `active -> restricted | suspended | redeemed | retired`
+    - terminal `retired` assets cannot transition again
+  - each transition appends a lifecycle event with actor, reason, and optional policy or issuer-request linkage
 
 ## Policy
 
