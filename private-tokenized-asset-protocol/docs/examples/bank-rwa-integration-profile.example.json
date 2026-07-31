@@ -1,5 +1,5 @@
 {
-  "profileVersion": "2026-05-09",
+  "profileVersion": "2026-07-30",
   "tenantId": "tenant-a",
   "institution": {
     "legalName": "Northstar Bank Sandbox",
@@ -11,13 +11,41 @@
       "enabled": true,
       "assetId": 1,
       "symbol": "NSUSD",
-      "mintBurnAuthority": "issuer_demo_bank"
+      "displayName": "Northstar Sandbox Dollar",
+      "issuerId": "issuer_demo_bank",
+      "jurisdiction": "US",
+      "identifiers": {
+        "internalAssetCode": "NSUSD-SBX"
+      },
+      "legalDocumentHash": "sha256:nsusd-sandbox-offering-docs-v1",
+      "serviceProviders": {
+        "custodianId": "northstar-treasury",
+        "reserveAttestorId": "customer-reserve-portal"
+      },
+      "metadata": {
+        "mintBurnAuthority": "issuer_demo_bank",
+        "reserveModel": "fiat-backed"
+      }
     },
     "tokenizedStock": {
       "enabled": true,
       "assetId": 101,
       "symbol": "NSTK",
-      "transferRestrictionModel": "permissioned-investor"
+      "displayName": "Northstar Sandbox Common Stock",
+      "issuerId": "issuer_demo_bank",
+      "jurisdiction": "US",
+      "identifiers": {
+        "isin": "US000000NSTK0",
+        "cusip": "000000NST"
+      },
+      "legalDocumentHash": "sha256:nstk-sandbox-offering-docs-v1",
+      "serviceProviders": {
+        "custodianId": "northstar-custody",
+        "transferAgentId": "northstar-transfer-agent"
+      },
+      "metadata": {
+        "transferRestrictionModel": "permissioned-investor"
+      }
     }
   },
   "sources": [
@@ -28,10 +56,33 @@
       "providerLabel": "customer-bank-api",
       "requiredFields": ["current_balance_cents", "available_balance_cents", "account_status", "currency"],
       "adapter": {
+        "provider": "generic-rest",
         "baseUrl": "https://sandbox.api.customer.example",
         "allowedHosts": ["sandbox.api.customer.example"],
         "authProfile": "customerBalanceAuth",
-        "mappingVersion": "balance-v1"
+        "mappingVersion": "balance-v1",
+        "endpointPath": "/v1/accounts/{accountId}/balance",
+        "method": "GET",
+        "extract": {
+          "eligibilityPath": "eligible",
+          "scorePath": "score",
+          "fields": {
+            "currentBalanceCents": "current_balance_cents",
+            "availableBalanceCents": "available_balance_cents",
+            "accountStatus": "account_status",
+            "currency": "currency"
+          }
+        },
+        "auth": {
+          "type": "oauth2-client-credentials",
+          "tokenUrl": "https://sandbox.api.customer.example/oauth/token",
+          "clientIdEnv": "CUSTOMER_BALANCE_CLIENT_ID",
+          "clientSecretEnv": "CUSTOMER_BALANCE_CLIENT_SECRET",
+          "scope": "accounts.read",
+          "lifecycle": {
+            "keyVersion": "customer-balance-sandbox-v1"
+          }
+        }
       }
     },
     {
@@ -41,10 +92,30 @@
       "providerLabel": "customer-identity-api",
       "requiredFields": ["kyc_status", "customer_id", "country_code"],
       "adapter": {
+        "provider": "generic-rest",
         "baseUrl": "https://sandbox.identity.customer.example",
         "allowedHosts": ["sandbox.identity.customer.example"],
         "authProfile": "customerKycAuth",
-        "mappingVersion": "kyc-v1"
+        "mappingVersion": "kyc-v1",
+        "endpointPath": "/v1/customers/{customerId}/kyc-status",
+        "method": "GET",
+        "extract": {
+          "eligibilityPath": "eligible",
+          "scorePath": "score",
+          "fields": {
+            "kycStatus": "kyc_status",
+            "customerId": "customer_id",
+            "countryCode": "country_code"
+          }
+        },
+        "auth": {
+          "type": "api-key",
+          "secretEnv": "CUSTOMER_KYC_API_KEY",
+          "header": "x-api-key",
+          "lifecycle": {
+            "keyVersion": "customer-kyc-sandbox-v1"
+          }
+        }
       }
     },
     {
@@ -54,10 +125,33 @@
       "providerLabel": "customer-custody-api",
       "requiredFields": ["asset_symbol", "units", "certificate_status", "account_id"],
       "adapter": {
+        "provider": "generic-rest",
         "baseUrl": "https://sandbox.custody.customer.example",
         "allowedHosts": ["sandbox.custody.customer.example"],
         "authProfile": "customerHoldingsAuth",
-        "mappingVersion": "holdings-v1"
+        "mappingVersion": "holdings-v1",
+        "endpointPath": "/v1/accounts/{accountId}/positions/{securityId}",
+        "method": "GET",
+        "extract": {
+          "eligibilityPath": "eligible",
+          "scorePath": "score",
+          "fields": {
+            "assetSymbol": "asset_symbol",
+            "units": "units",
+            "certificateStatus": "certificate_status",
+            "accountId": "account_id"
+          }
+        },
+        "auth": {
+          "type": "oauth2-client-credentials",
+          "tokenUrl": "https://sandbox.custody.customer.example/oauth/token",
+          "clientIdEnv": "CUSTOMER_HOLDINGS_CLIENT_ID",
+          "clientSecretEnv": "CUSTOMER_HOLDINGS_CLIENT_SECRET",
+          "scope": "holdings.read",
+          "lifecycle": {
+            "keyVersion": "customer-holdings-sandbox-v1"
+          }
+        }
       }
     },
     {
@@ -67,6 +161,7 @@
       "providerLabel": "customer-reserve-portal",
       "requiredFields": ["reserve_balance_cents", "currency", "as_of"],
       "zktls": {
+        "provider": "zktls-bank",
         "httpsUrl": "https://reserves.customer.example/statement",
         "expectedServerName": "reserves.customer.example",
         "disclosedFields": ["reserve_balance_cents", "currency", "as_of"]
@@ -76,8 +171,11 @@
   "policies": [
     {
       "policyId": 1,
+      "version": 1,
       "purpose": "stablecoin mint eligibility",
       "jurisdiction": "US",
+      "effectiveAt": "2026-07-30T00:00:00.000Z",
+      "status": "active",
       "requiredSources": ["customer-balance", "customer-kyc"],
       "rules": {
         "minBalanceCents": 100000,
@@ -86,8 +184,11 @@
     },
     {
       "policyId": 2,
+      "version": 1,
       "purpose": "tokenized stock investor eligibility",
       "jurisdiction": "US",
+      "effectiveAt": "2026-07-30T00:00:00.000Z",
+      "status": "active",
       "requiredSources": ["customer-kyc", "custody-holdings"],
       "rules": {
         "requirePassedKyc": true,

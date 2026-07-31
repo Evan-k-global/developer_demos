@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const allowedSourceCategories = new Set([
   'balance',
@@ -165,7 +166,7 @@ function scoreReadiness(issues, warnings) {
   return Math.max(0, 100 - issuePenalty - warningPenalty);
 }
 
-function buildIntegrationPlan(profile) {
+export function buildIntegrationPlan(profile) {
   const sources = Array.isArray(profile.sources) ? profile.sources : [];
   const policies = Array.isArray(profile.policies) ? profile.policies : [];
   const operations = Array.isArray(profile.operations) ? profile.operations : [];
@@ -244,7 +245,7 @@ function recommendedNextSteps(profile, issues, warnings) {
   return steps;
 }
 
-function validateProfile(profile) {
+export function validateProfile(profile) {
   const issues = [];
   const warnings = [];
 
@@ -324,19 +325,24 @@ function usage() {
   console.error(`usage: node scripts/${script} <profile.json>`);
 }
 
-const filePath = process.argv[2];
-if (!filePath) {
-  usage();
-  process.exit(2);
-}
+const invokedAsCli =
+  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 
-try {
-  const resolved = path.resolve(process.cwd(), filePath);
-  const profile = readJson(resolved);
-  const result = validateProfile(profile);
-  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  process.exit(result.ok ? 0 : 1);
-} catch (error) {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
+if (invokedAsCli) {
+  const filePath = process.argv[2];
+  if (!filePath) {
+    usage();
+    process.exit(2);
+  }
+
+  try {
+    const resolved = path.resolve(process.cwd(), filePath);
+    const profile = readJson(resolved);
+    const result = validateProfile(profile);
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    process.exit(result.ok ? 0 : 1);
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  }
 }

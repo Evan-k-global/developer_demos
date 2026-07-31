@@ -6,10 +6,6 @@ It is designed for institutions that want to issue and manage stablecoins, token
 
 TAP is the private operating layer. Ethereum is the optional public rail.
 
-## Network Profile
-
-Testnet remains the default for Zeko integration points. For mainnet, use a separate environment profile with `ZEKO_NETWORK_ID=mainnet`, official mainnet endpoints, production issuer/custody/prover controls, and reviewed bridge settings. Do not reuse testnet zkApp, fee-payer, sponsor, or certification artifacts. See [Zeko Mainnet Readiness](../docs/zeko-mainnet-readiness.md).
-
 ## Why TAP
 
 The current public-chain tokenization model is easy to launch and easy to copy.
@@ -68,6 +64,7 @@ flowchart LR
 ### Core packages
 
 - `packages/policy-engine`: versioned policy registry and policy hashing
+- `packages/asset-registry`: asset master records and governed lifecycle transitions
 - `packages/prover-service`: proof generation and verification lanes
 - `packages/source-adapters`: partner API and generic REST adapter layer
 - `packages/attestor-service`: statement, phone, and zkTLS attestation handling
@@ -95,6 +92,12 @@ Validate the bank RWA integration profile:
 
 ```bash
 pnpm validate:bank-profile
+```
+
+Compile it into a TAP bootstrap plan:
+
+```bash
+pnpm compile:bank-profile -- docs/examples/bank-rwa-integration-profile.example.json
 ```
 
 Run the dual-asset flagship pilot:

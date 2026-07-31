@@ -41,6 +41,46 @@ Or use the package script:
 pnpm validate:bank-profile
 ```
 
+## Compile and apply
+
+The profile can now compile into real TAP configuration payloads. The compiler does not store credentials: it only carries environment-variable references for API keys, OAuth client credentials, and optional mTLS material.
+
+Compile the profile into a reviewable plan:
+
+```bash
+pnpm compile:bank-profile -- docs/examples/bank-rwa-integration-profile.example.json \
+  --out output/bank-rwa-bootstrap-plan.json
+```
+
+The plan contains:
+
+- tenant provider-config upserts, including allowed hosts and secret references
+- draft asset-registry upserts for each enabled stablecoin or tokenized security
+- active policy-version upserts with deterministic policy inputs
+- source-collection request templates
+- maker-checker role requirements and post-apply checks
+
+Apply the provider, asset-registry, and policy configuration only after reviewing the plan:
+
+```bash
+API_BASE_URL=http://localhost:7001 \
+ADMIN_API_KEY=your_admin_key \
+pnpm apply:bank-profile -- docs/examples/bank-rwa-integration-profile.example.json
+```
+
+`--apply` is deliberately explicit. It never sets secret values, calls partner APIs, issues assets, activates assets, or changes issuer roles. It creates or updates draft asset master records, tenant provider configuration, and policy versions through the authenticated admin API.
+
+For an adapter source to be applicable, its `adapter` block needs:
+
+- `provider`: a supported TAP provider, usually `generic-rest` for a customer-owned API
+- `authProfile`: a stable profile name used by source collection
+- `auth`: a secret-reference definition, such as OAuth2 client credentials or an API-key environment variable
+- `endpointPath`, `method`, and `extract`: a reviewable source collection template
+
+For a policy to be applicable, it needs `version`, `effectiveAt`, and `status` in addition to its policy rules and required sources.
+
+For an enabled asset rail to be applicable, it needs `assetId`, `symbol`, `displayName`, `issuerId`, `jurisdiction`, and `legalDocumentHash`. The registry preserves lifecycle state on later metadata updates. A checker must separately transition an asset from `draft` to `approved` and then `active`.
+
 ## Readiness output
 
 The validator returns:

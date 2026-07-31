@@ -49,6 +49,25 @@ These states are shared conceptually across asset classes:
 - `rejected`
 - `cancelled`
 
+## Asset Master Registry
+
+Before the first issuance request, TAP registers a durable asset master record. It binds the control plane to the asset's legal and operational identity without publishing customer holdings or source data.
+
+The record includes:
+
+- asset class, symbol, issuer, jurisdiction, and external identifiers
+- hash of governing offering, reserve, or legal documentation
+- custodian, transfer-agent, reserve-attestor, and administrator references
+- current control-plane state and an immutable lifecycle event history
+
+The asset registry uses a narrower lifecycle than individual issuance requests:
+
+- `draft -> approved -> active`
+- `active -> restricted | suspended | redeemed | retired`
+- `retired` is terminal
+
+An `ISSUER_CHECKER` or consortium admin performs registry lifecycle transitions. Individual mint, burn, issue, allocate, restrict, and redeem requests continue to use the existing maker-checker workflow and policy-linked settlement checks.
+
 ## Stablecoin Lifecycle
 
 ### 1. Eligibility

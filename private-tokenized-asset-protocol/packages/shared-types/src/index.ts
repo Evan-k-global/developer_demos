@@ -265,6 +265,67 @@ export const UpsertPolicyRequestSchema = z.object({
   status: PolicyStatusSchema.default('draft')
 });
 
+export const AssetClassSchema = z.enum(['stablecoin', 'equity', 'fund', 'debt', 'custom']);
+
+export const AssetLifecycleStatusSchema = z.enum([
+  'draft',
+  'approved',
+  'active',
+  'restricted',
+  'suspended',
+  'redeemed',
+  'retired'
+]);
+
+export const AssetServiceProvidersSchema = z.object({
+  custodianId: z.string().min(1).optional(),
+  transferAgentId: z.string().min(1).optional(),
+  reserveAttestorId: z.string().min(1).optional(),
+  administratorId: z.string().min(1).optional()
+});
+
+export const UpsertAssetRegistryRequestSchema = z.object({
+  tenantId: z.string().min(1),
+  assetId: z.number().int().nonnegative(),
+  assetClass: AssetClassSchema,
+  symbol: z.string().min(1).max(32),
+  displayName: z.string().min(1).max(160),
+  issuerId: z.string().min(1),
+  jurisdiction: z.string().min(1),
+  identifiers: z.record(z.string(), z.string()).default({}),
+  legalDocumentHash: z.string().min(1).optional(),
+  serviceProviders: AssetServiceProvidersSchema.default({}),
+  metadata: z.record(z.string(), z.unknown()).default({})
+});
+
+export const AssetRegistryRecordSchema = UpsertAssetRegistryRequestSchema.extend({
+  status: AssetLifecycleStatusSchema,
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
+export const TransitionAssetLifecycleRequestSchema = z.object({
+  status: AssetLifecycleStatusSchema,
+  reason: z.string().min(1).max(500),
+  policyId: z.number().int().nonnegative().optional(),
+  policyHash: z.string().min(1).optional(),
+  issuerRequestId: z.string().min(1).optional()
+});
+
+export const AssetLifecycleEventSchema = z.object({
+  eventId: z.string(),
+  tenantId: z.string().min(1),
+  assetId: z.number().int().nonnegative(),
+  fromStatus: AssetLifecycleStatusSchema.optional(),
+  toStatus: AssetLifecycleStatusSchema,
+  reason: z.string(),
+  actorKeyId: z.string().min(1),
+  policyId: z.number().int().nonnegative().optional(),
+  policyHash: z.string().min(1).optional(),
+  issuerRequestId: z.string().min(1).optional(),
+  createdAt: z.string()
+});
+
 export const EligibilityProofRequestSchema = z.object({
   subjectCommitment: z.string().min(1),
   policyId: z.number().int().nonnegative(),
@@ -438,6 +499,13 @@ export type IssuerRequestKind = z.infer<typeof IssuerRequestKindSchema>;
 export type RiskOperation = z.infer<typeof RiskOperationSchema>;
 export type UpsertRiskConfigRequest = z.infer<typeof UpsertRiskConfigRequestSchema>;
 export type UpsertPolicyRequest = z.infer<typeof UpsertPolicyRequestSchema>;
+export type AssetClass = z.infer<typeof AssetClassSchema>;
+export type AssetLifecycleStatus = z.infer<typeof AssetLifecycleStatusSchema>;
+export type AssetServiceProviders = z.infer<typeof AssetServiceProvidersSchema>;
+export type UpsertAssetRegistryRequest = z.infer<typeof UpsertAssetRegistryRequestSchema>;
+export type AssetRegistryRecord = z.infer<typeof AssetRegistryRecordSchema>;
+export type TransitionAssetLifecycleRequest = z.infer<typeof TransitionAssetLifecycleRequestSchema>;
+export type AssetLifecycleEvent = z.infer<typeof AssetLifecycleEventSchema>;
 export type EligibilityProofRequest = z.infer<typeof EligibilityProofRequestSchema>;
 export type TransferComplianceProofRequest = z.infer<typeof TransferComplianceProofRequestSchema>;
 export type MintRequest = z.infer<typeof MintRequestSchema>;
