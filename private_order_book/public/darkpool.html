@@ -1191,6 +1191,62 @@
         letter-spacing: 0.04em;
         white-space: nowrap;
       }
+      .network-wallet-wrap {
+        position: relative;
+      }
+      .network-wallet-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        cursor: pointer;
+        background: rgba(8, 21, 37, 0.82);
+      }
+      .network-wallet-trigger:hover,
+      .network-wallet-trigger:focus-visible {
+        border-color: #41749a;
+        color: #d7fbff;
+        outline: none;
+      }
+      .network-wallet-trigger.connected {
+        border-color: #2f6e63;
+      }
+      .network-wallet-chevron {
+        font-size: 10px;
+        color: #70d7de;
+      }
+      .network-wallet-menu {
+        right: 0;
+        left: auto;
+        width: 256px;
+      }
+      .network-wallet-status {
+        display: grid;
+        gap: 3px;
+        padding: 7px 8px 9px;
+        border-bottom: 1px solid #1d3d58;
+        color: #99b6ce;
+        font-size: 11px;
+      }
+      .network-wallet-status strong {
+        color: #d7fbff;
+        font-size: 12px;
+      }
+      .network-wallet-status span {
+        overflow-wrap: anywhere;
+      }
+      .wallet-menu-link {
+        display: block;
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: #70d7de;
+        font-size: 12px;
+        text-decoration: none;
+      }
+      .wallet-menu-link:hover,
+      .wallet-menu-link:focus-visible {
+        background: rgba(78, 199, 255, 0.12);
+        outline: none;
+      }
       .wallet-btn {
         width: auto;
         padding: 6px 12px;
@@ -1200,6 +1256,42 @@
         border: 1px solid #2f6e63;
         background: linear-gradient(120deg, rgba(42, 140, 255, 0.24), rgba(37, 208, 181, 0.26));
         color: #d7fbff;
+      }
+      .wallet-connect-wrap {
+        position: relative;
+      }
+      .wallet-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        z-index: 30;
+        width: 188px;
+        padding: 6px;
+        display: grid;
+        gap: 4px;
+        border: 1px solid #2b4a63;
+        border-radius: 12px;
+        background: rgba(6, 17, 32, 0.98);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38);
+      }
+      .wallet-menu[hidden] {
+        display: none;
+      }
+      .wallet-menu button {
+        width: 100%;
+        padding: 8px 10px;
+        text-align: left;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: #c7ddf1;
+        font-size: 12px;
+      }
+      .wallet-menu button:hover,
+      .wallet-menu button:focus-visible {
+        border-color: #315675;
+        background: rgba(78, 199, 255, 0.12);
+        outline: none;
       }
       .panel-hidden {
         display: none;
@@ -1448,7 +1540,7 @@
         <ol class="welcome-steps">
           <li class="welcome-step">
             <div class="welcome-step-num">1</div>
-            <div><strong>Connect wallet</strong><span>Link your Auro wallet to enable private trading.</span></div>
+            <div><strong>Connect wallet</strong><span>Link Auro or the Zeko Mina Wallet Snap in MetaMask to enable private trading.</span></div>
           </li>
           <li class="welcome-step">
             <div class="welcome-step-num">2</div>
@@ -1478,10 +1570,30 @@
       <div class="top-tabs">
         <button id="tabTrading" class="tab-btn active">Trading</button>
         <button id="tabFunding" class="tab-btn">Funding</button>
-        <button type="button" class="ghost wallet-btn" id="globalConnectWalletBtn">Connect Auro Wallet</button>
+        <div class="wallet-connect-wrap">
+          <button type="button" class="ghost wallet-btn" id="globalConnectWalletBtn" aria-haspopup="menu" aria-expanded="false">Connect Wallet</button>
+          <div id="walletProviderMenu" class="wallet-menu" role="menu" hidden>
+            <button type="button" role="menuitem" id="connectAuroWalletBtn">Connect Auro</button>
+            <button type="button" role="menuitem" id="connectMetaMaskWalletBtn">Connect MetaMask (Flask)</button>
+          </div>
+        </div>
       </div>
       <div class="header-actions">
-        <div class="network-badge">Zeko Ethereum Sepolia</div>
+        <div class="network-wallet-wrap">
+          <button type="button" id="networkWalletMenuBtn" class="network-badge network-wallet-trigger" aria-haspopup="menu" aria-expanded="false">
+            <span>Zeko Ethereum Sepolia</span><span class="network-wallet-chevron">▾</span>
+          </button>
+          <div id="networkWalletMenu" class="wallet-menu network-wallet-menu" role="menu" hidden>
+            <div class="network-wallet-status">
+              <strong id="networkWalletProviderStatus">No wallet connected</strong>
+              <span id="networkWalletAddressStatus">Choose a wallet to connect.</span>
+            </div>
+            <button type="button" role="menuitem" id="switchAuroWalletBtn">Connect Auro</button>
+            <button type="button" role="menuitem" id="switchMetaMaskWalletBtn">Connect MetaMask (Flask)</button>
+            <a class="wallet-menu-link" href="https://chromewebstore.google.com/detail/metamask-flask-developmen/ljfoeinjpaedjfecbmggjgodbgkmjkjk" target="_blank" rel="noopener noreferrer">Install MetaMask Flask</a>
+            <button type="button" role="menuitem" id="disconnectWalletBtn">Disconnect Wallet</button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="tradingPanel" class="app">
@@ -1491,7 +1603,7 @@
           <div class="grid3">
             <div>
               <label>Wallet</label>
-              <input id="ordWallet" placeholder="Connect Auro Wallet" />
+              <input id="ordWallet" placeholder="Connect Wallet" />
             </div>
             <div>
               <label>Market</label>
@@ -1651,6 +1763,7 @@
           <div class="hd-tools">
             <select id="activityView" class="compact-select">
               <option value="your">Your Activity</option>
+              <option value="open">Open Orders</option>
               <option value="global">Global History</option>
             </select>
             <span class="activity-toolbar-label">Wallet</span>
@@ -1702,7 +1815,7 @@
             </div>
           </div>
           <div class="hint-box activity-privacy-note">
-            Your detailed order and fill history is kept in this browser. The server stores only redacted activity commitments.
+            Open Orders shows collateral currently locked by your orders. Cancel an order here to release its note collateral.
           </div>
           <div class="activity-table">
             <div class="activity-head">
@@ -1796,7 +1909,7 @@
           <div class="hd"><h2>Funding Guide</h2></div>
           <div class="bd stack">
             <div class="footnote mono">
-              1) Connect Auro. 2) Sync balances. 3) Deposit and mint private notes. 4) Trade with notes.
+              1) Connect a wallet. 2) Sync balances. 3) Deposit and mint private notes. 4) Trade with notes.
             </div>
           </div>
         </section>
@@ -1842,6 +1955,7 @@
               <div id="withdrawHistory" class="withdraw-history">
                 <div class="withdraw-empty">Withdrawals will appear here after you redeem private collateral back to your wallet.</div>
               </div>
+              <div id="pendingWithdrawals" class="withdraw-history" hidden></div>
             </div>
             <details id="noteAdvanced" class="stack">
               <summary class="footnote mono">Advanced</summary>
@@ -1868,7 +1982,7 @@
           <div class="hd"><h2>On-Chain Funding</h2></div>
           <div class="bd stack">
             <div class="footnote">
-              Sync your active Auro account and on-chain balances into ShadowBook.
+              Sync your active Auro or MetaMask Snap account and on-chain balances into ShadowBook.
             </div>
             <div class="grid2 funding-sync-row">
               <button id="syncBtn" class="txn">Sync On-Chain Balance</button>
@@ -1889,7 +2003,7 @@
           <div class="hd"><h2>Transfer sZEKO</h2></div>
           <div class="bd stack">
             <div class="footnote">
-              Build the sZEKO transfer before Auro signs it. ShadowBook adds the recipient token account when needed; this does not mint notes or change vault collateral.
+              Build the sZEKO transfer before your wallet signs it. ShadowBook adds the recipient token account when needed; this does not mint notes or change vault collateral.
             </div>
             <div class="grid2">
               <div>
@@ -1901,10 +2015,10 @@
                 <input id="tokenTransferAmount" type="number" min="0.000000001" step="any" placeholder="0" />
               </div>
             </div>
-            <div id="tokenTransferHint" class="hint-box">Source wallet: connect Auro or enter a wallet in On-Chain Funding.</div>
+            <div id="tokenTransferHint" class="hint-box">Source wallet: connect Auro or MetaMask, or enter a wallet in On-Chain Funding.</div>
             <div class="grid2">
               <button id="buildTokenTransferBtn" class="ghost">Build Transfer</button>
-              <button id="signTokenTransferBtn" class="txn" disabled>Sign in Auro</button>
+              <button id="signTokenTransferBtn" class="txn" disabled>Sign in Wallet</button>
             </div>
             <pre id="tokenTransferOut"></pre>
           </div>
@@ -1945,8 +2059,21 @@
       let serverTokenContractAddresses = {};
       const walletSyncTimes = new Map();
       const WALLET_SYNC_COOLDOWN_MS = 20000;
-      let activeAuroWallet = '';
-      let autoAuroSyncInFlight = false;
+      const META_MASK_MINA_SNAP_ID = 'npm:@mondejka/mina-snap';
+      const META_MASK_FLASK_STORE_URL = 'https://chromewebstore.google.com/detail/metamask-flask-developmen/ljfoeinjpaedjfecbmggjgodbgkmjkjk';
+      const META_MASK_PROVIDER_PROBE_TIMEOUT_MS = 2000;
+      let activeWallet = '';
+      let activeWalletProvider = '';
+      let activeMetaMaskSnapProvider = null;
+      const eip6963Providers = new Set();
+      const eip6963ProviderInfo = new Map();
+      let metaMaskProviderDiagnostic = '';
+      let walletAutoConnectPaused = false;
+      let autoWalletSyncInFlight = false;
+      const walletReadAuthorizationCache = new Map();
+      const walletReadAuthorizationInFlight = new Map();
+      const WALLET_READ_AUTH_EXPIRY_MS = 8 * 60 * 60 * 1000;
+      const WALLET_READ_AUTH_SESSION_PREFIX = 'shadowbook.wallet-read.v1.';
       let activeDepositIntentId = '';
       let pendingTokenTransfer = null;
       const sepoliaWalletNetwork = {
@@ -1955,6 +2082,14 @@
         auroNetworkName: 'Zeko Ethereum Sepolia',
         graphqlUrl: 'https://sepolia.zeko.io/graphql'
       };
+
+      window.addEventListener('eip6963:announceProvider', (event) => {
+        const provider = event?.detail?.provider;
+        if (typeof provider?.request === 'function') {
+          eip6963Providers.add(provider);
+          eip6963ProviderInfo.set(provider, event?.detail?.info || {});
+        }
+      });
 
       function formatDisplayAsset(asset) {
         const value = String(asset || '').trim();
@@ -2000,8 +2135,150 @@
         setMakerPairDisplay('sETH/sZEKO');
       }
 
-      async function auroRequest(methodName, params) {
-        const provider = window.mina;
+      function getMinaWalletProvider() {
+        if (activeWalletProvider === 'metamask') {
+          const snapProvider = activeMetaMaskSnapProvider;
+          if (!snapProvider?.request) return null;
+          const invoke = async (method, params) =>
+            await snapProvider.request({
+              method: 'wallet_invokeSnap',
+              params: {
+                snapId: META_MASK_MINA_SNAP_ID,
+                request: params === undefined ? { method } : { method, params }
+              }
+            });
+          return {
+            requestAccounts: () => invoke('mina_requestAccounts'),
+            getAccounts: () => invoke('mina_accounts'),
+            requestNetwork: () => invoke('mina_requestNetwork'),
+            addChain: (params) => invoke('mina_addChain', params),
+            signMessage: (params) => invoke('mina_signMessage', params),
+            signFields: (params) => invoke('mina_signFields', params),
+            sendTransaction: (params) => invoke('mina_sendTransaction', params),
+            request: ({ method, params }) => invoke(method, params)
+          };
+        }
+        return window.mina || null;
+      }
+
+      function getInjectedEthereumProviders() {
+        const primary = window.ethereum;
+        const providers = Array.isArray(primary?.providers) ? primary.providers : [];
+        try {
+          window.dispatchEvent(new Event('eip6963:requestProvider'));
+        } catch {}
+        // Explicitly announced providers are more reliable when MetaMask and Flask
+        // are installed together. Keep the ambiguous window.ethereum fallback last.
+        return [...new Set([...eip6963Providers, ...providers, primary])].filter((provider) => typeof provider?.request === 'function');
+      }
+
+      function findInstalledMinaSnap(snaps) {
+        if (!snaps || typeof snaps !== 'object') return null;
+        if (snaps[META_MASK_MINA_SNAP_ID]) return snaps[META_MASK_MINA_SNAP_ID];
+        return Object.values(snaps).find((snap) => snap?.id === META_MASK_MINA_SNAP_ID) || null;
+      }
+
+      function withProviderProbeTimeout(task, label) {
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error(`${label} timed out after ${META_MASK_PROVIDER_PROBE_TIMEOUT_MS}ms`)),
+            META_MASK_PROVIDER_PROBE_TIMEOUT_MS
+          );
+          Promise.resolve().then(task).then(
+            (value) => {
+              clearTimeout(timeout);
+              resolve(value);
+            },
+            (error) => {
+              clearTimeout(timeout);
+              reject(error);
+            }
+          );
+        });
+      }
+
+      async function probeMetaMaskProvider(provider) {
+        const [snapsResult, versionResult] = await Promise.allSettled([
+          withProviderProbeTimeout(() => provider.request({ method: 'wallet_getSnaps' }), 'wallet_getSnaps'),
+          withProviderProbeTimeout(() => provider.request({ method: 'web3_clientVersion' }), 'web3_clientVersion')
+        ]);
+        const snaps = snapsResult.status === 'fulfilled' ? snapsResult.value : null;
+        const version = versionResult.status === 'fulfilled' ? String(versionResult.value || '') : '';
+        return {
+          provider,
+          installedSnap: findInstalledMinaSnap(snaps),
+          version,
+          providerInfo: eip6963ProviderInfo.get(provider) || {},
+          probeErrors: [snapsResult, versionResult]
+            .filter((result) => result.status === 'rejected')
+            .map((result) => String(result.reason?.message || result.reason))
+        };
+      }
+
+      async function selectMetaMaskSnapProvider() {
+        activeMetaMaskSnapProvider = null;
+        const providers = getInjectedEthereumProviders();
+        if (!providers.length) {
+          metaMaskProviderDiagnostic = 'No EIP-1193 wallet provider was injected.';
+          return null;
+        }
+
+        const results = await Promise.all(providers.map((provider) => probeMetaMaskProvider(provider)));
+        const installed = results.find((result) => result.installedSnap);
+        if (installed) {
+          activeMetaMaskSnapProvider = installed.provider;
+          metaMaskProviderDiagnostic = `Installed Mina Snap ${installed.installedSnap.version || 'detected'}`;
+          return { provider: installed.provider, installed: true };
+        }
+
+        const flask = results.find((result) => {
+          const announcedLabel = `${result.providerInfo?.name || ''} ${result.providerInfo?.rdns || ''}`;
+          return `${result.version} ${announcedLabel}`.toLowerCase().includes('flask');
+        });
+        if (flask) {
+          activeMetaMaskSnapProvider = flask.provider;
+          const flaskLabel = flask.providerInfo?.name || flask.version || 'MetaMask Flask';
+          metaMaskProviderDiagnostic = `Flask detected: ${flaskLabel}`;
+          return { provider: flask.provider, installed: false };
+        }
+
+        const discoveredVersions = results.map((result) => result.version).filter(Boolean);
+        const probeErrors = results.flatMap((result) => result.probeErrors);
+        metaMaskProviderDiagnostic = discoveredVersions.length
+          ? `Detected: ${discoveredVersions.join(' | ')}`
+          : probeErrors.length
+            ? `Wallet provider probes failed: ${probeErrors.join(' | ')}`
+            : 'No compatible MetaMask Flask provider was detected.';
+        return null;
+      }
+
+      function showMetaMaskFlaskUnavailable() {
+        const providerStatus = document.getElementById('networkWalletProviderStatus');
+        const addressStatus = document.getElementById('networkWalletAddressStatus');
+        if (providerStatus) providerStatus.textContent = 'MetaMask Flask not available';
+        if (addressStatus) addressStatus.textContent = `${metaMaskProviderDiagnostic} Use a browser profile with Flask enabled and standard MetaMask disabled.`;
+      }
+
+      async function installMetaMaskMinaSnap() {
+        const selection = await selectMetaMaskSnapProvider();
+        if (!selection) {
+          showMetaMaskFlaskUnavailable();
+          throw new Error('MetaMask Flask is not injected in this browser profile. ShadowBook did not send a Snap request to standard MetaMask. Use the Flask-only browser profile, then try again.');
+        }
+        if (selection.installed) return;
+        const installed = await selection.provider.request({
+          method: 'wallet_requestSnaps',
+          params: {
+            [META_MASK_MINA_SNAP_ID]: { version: '0.1.0' }
+          }
+        });
+        if (!installed?.[META_MASK_MINA_SNAP_ID]) {
+          throw new Error('MetaMask did not install the Zeko Mina Wallet Snap');
+        }
+      }
+
+      async function walletRequest(methodName, params) {
+        const provider = getMinaWalletProvider();
         if (!provider) throw new Error('No Mina wallet provider found in browser');
         if (typeof provider[methodName] === 'function') {
           return params === undefined ? await provider[methodName]() : await provider[methodName](params);
@@ -2018,8 +2295,8 @@
         return String(first?.publicKey || first?.address || '').trim();
       }
 
-      async function readAuroWallet({ request = false } = {}) {
-        const provider = window.mina;
+      async function readConnectedWallet({ request = false } = {}) {
+        const provider = getMinaWalletProvider();
         if (!provider) return '';
         let accounts = [];
         if (request && typeof provider.requestAccounts === 'function') {
@@ -2042,52 +2319,54 @@
         }
       }
 
-      async function syncDetectedAuroWallet({ force = false } = {}) {
-        if (autoAuroSyncInFlight) return false;
-        const wallet = await readAuroWallet();
+      async function syncDetectedWallet({ force = false } = {}) {
+        if (walletAutoConnectPaused && !force) return false;
+        if (autoWalletSyncInFlight) return false;
+        const wallet = await readConnectedWallet();
         if (!wallet) return false;
         const current = String(document.getElementById('chainWallet')?.value || '').trim();
         const currentIsEmpty = !current || isDemoWalletPlaceholder(current);
-        const canAdopt = force || walletConnected || currentIsEmpty || current === activeAuroWallet;
+        const canAdopt = force || walletConnected || currentIsEmpty || current === activeWallet;
         if (!canAdopt) return false;
-        const changed = wallet !== activeAuroWallet || current !== wallet;
-        activeAuroWallet = wallet;
+        const changed = wallet !== activeWallet || current !== wallet;
+        if (!activeWalletProvider) activeWalletProvider = 'auro';
+        activeWallet = wallet;
         walletConnected = true;
         if (current !== wallet) setWalletFields(wallet);
         updateWalletButtonState();
         if (!changed && !force) return true;
-        autoAuroSyncInFlight = true;
+        autoWalletSyncInFlight = true;
         try {
           await syncWalletContext(wallet);
           walletSyncTimes.set(wallet, Date.now());
         } finally {
-          autoAuroSyncInFlight = false;
+          autoWalletSyncInFlight = false;
         }
         return true;
       }
 
-      async function requestAuroNetworkInfo() {
+      async function requestWalletNetworkInfo() {
         try {
-          return await auroRequest('requestNetwork');
+          return await walletRequest('requestNetwork');
         } catch {
           return null;
         }
       }
 
       async function syncSepoliaWalletNetwork() {
-        const provider = window.mina;
+        const provider = getMinaWalletProvider();
         if (!provider) {
           throw new Error('No Mina wallet provider found in browser');
         }
-        const auroResult = await auroRequest('addChain', {
+        const walletResult = await walletRequest('addChain', {
           url: sepoliaWalletNetwork.graphqlUrl,
           name: sepoliaWalletNetwork.auroNetworkName
         });
-        const currentNetwork = await requestAuroNetworkInfo();
+        const currentNetwork = await requestWalletNetworkInfo();
         return {
           requestedWalletNetwork: sepoliaWalletNetwork,
-          auroResult,
-          auroNetwork: currentNetwork
+          walletResult,
+          walletNetwork: currentNetwork
         };
       }
 
@@ -2225,6 +2504,13 @@
           return n.toFixed(8).replace(/0+$/, '').replace(/\.$/, '');
         }
         return fixed;
+      }
+
+      function fmtChartAxisPrice(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return '-';
+        // Reserve precision for prices with up to seven integer digits.
+        return n.toFixed(7);
       }
 
       function fmtUtcTime(value) {
@@ -2455,7 +2741,7 @@
       }
 
       async function sendDepositTxWithWallet() {
-        const provider = window.mina;
+        const provider = getMinaWalletProvider();
         if (!provider) throw new Error('No Mina wallet provider found in browser');
         if (!vaultDepositAddress) throw new Error('Vault address is not configured on server');
         const wallet = document.getElementById('noteWallet').value.trim();
@@ -2529,7 +2815,7 @@
           } catch (e) {
             attempts.push(`sendTransaction: ${String(e?.message || e)}`);
             depositDebugLog('wallet-error', { asset, tokenId, error: String(e?.message || e) });
-            const error = new Error(`Auro signing or Sepolia submission failed for ${asset}. No automatic retry was sent. Attempts: ${attempts.join(' | ')}`);
+            const error = new Error(`Wallet signing or Sepolia submission failed for ${asset}. No automatic retry was sent. Attempts: ${attempts.join(' | ')}`);
             error.depositIntentId = depositIntentId;
             error.depositContext = { wallet, asset, tokenId, amount };
             throw error;
@@ -2602,11 +2888,11 @@
         return (
           document.getElementById('chainWallet')?.value?.trim() ||
           document.getElementById('noteWallet')?.value?.trim() ||
-          activeAuroWallet
+          activeWallet
         );
       }
 
-      async function buildTokenTransferForAuro() {
+      async function buildTokenTransfer() {
         const wallet = getTokenTransferSourceWallet();
         const recipient = document.getElementById('tokenTransferRecipient').value.trim();
         const amount = Number(document.getElementById('tokenTransferAmount').value || 0);
@@ -2617,7 +2903,7 @@
         setText('tokenTransferOut', {
           ok: true,
           pending: true,
-          message: 'Building and proving the sZEKO transfer. Auro will not open until this finishes.'
+          message: 'Building and proving the sZEKO transfer. Your wallet will not open until this finishes.'
         });
         const built = await sdk.buildTokenTransferTransaction({
           wallet,
@@ -2631,7 +2917,7 @@
         setText('tokenTransferOut', {
           ok: true,
           stage: 'built',
-          message: 'Transfer is built and proved. Review it, then click Sign in Auro.',
+          message: 'Transfer is built and proved. Review it, then click Sign in Wallet.',
           wallet,
           recipient,
           asset: built.asset,
@@ -2643,12 +2929,15 @@
         });
       }
 
-      async function signBuiltTokenTransferWithAuro() {
-        const provider = window.mina;
+      async function signBuiltTokenTransferWithWallet() {
+        const provider = getMinaWalletProvider();
         if (!provider) throw new Error('No Auro wallet provider found in browser');
         if (!pendingTokenTransfer?.built?.transaction) throw new Error('Build the transfer before signing');
         const { wallet, built } = pendingTokenTransfer;
         const txPayload = toAuroTransactionData(built.transaction);
+        // Auro signs all wallet-owned token account updates only when this
+        // prebuilt zkApp command is passed as JSON text, rather than an object.
+        const auroTransaction = JSON.stringify(txPayload);
         const walletFee = Number(built.fee || '0.0002');
         if (!Number.isFinite(walletFee) || walletFee <= 0) throw new Error(`invalid wallet fee ${built.fee}`);
         const attempts = [];
@@ -2669,7 +2958,7 @@
           try {
             const response = await provider.sendTransaction({
               onlySign: true,
-              transaction: txPayload,
+              transaction: auroTransaction,
               feePayer: { fee: walletFee }
             });
             return signAndSubmit(response, 'sendTransaction');
@@ -2683,7 +2972,7 @@
               method: 'mina_sendTransaction',
               params: {
                 onlySign: true,
-                transaction: txPayload,
+                transaction: auroTransaction,
                 feePayer: { fee: walletFee }
               }
             });
@@ -2692,7 +2981,7 @@
             attempts.push(`mina_sendTransaction: ${String(error?.message || error)}`);
           }
         }
-        throw new Error(`Auro did not accept the prebuilt sZEKO transfer. No automatic retry was sent. Attempts: ${attempts.join(' | ') || 'none'}`);
+        throw new Error(`Wallet did not accept the prebuilt sZEKO transfer. No automatic retry was sent. Attempts: ${attempts.join(' | ') || 'none'}`);
       }
 
       function sleep(ms) {
@@ -2891,7 +3180,10 @@
           return;
         }
         try {
-          const portfolio = await sdk.getNotesPortfolio(pending.wallet);
+          const portfolio = await sdk.getNotesPortfolio(
+            pending.wallet,
+            await createWalletAuthorization('account-read', 'wallet-read', pending.wallet)
+          );
           const existing = Number(portfolio?.outstandingByAsset?.[String(pending.asset).toUpperCase()] || 0);
           if (existing + 1e-9 >= Number(pending.amount || 0)) {
             clearPendingDeposit(pending.txHash);
@@ -2988,7 +3280,10 @@
           return;
         }
         try {
-          const data = await sdk.getNotesPortfolio(wallet);
+          const data = await sdk.getNotesPortfolio(
+            wallet,
+            await createWalletAuthorization('account-read', 'wallet-read', wallet)
+          );
           latestNotesPortfolio = data;
           const walletTotals = data?.onchainTotals || {};
           const byAsset = data?.outstandingByAsset || {};
@@ -3179,7 +3474,7 @@
       }
 
       async function signMessageWithWallet(message, wallet) {
-        const provider = window.mina;
+        const provider = getMinaWalletProvider();
         if (!provider) throw new Error('No Mina wallet provider found in browser');
         const attempts = [];
         function normalizeSignatureValue(value) {
@@ -3254,24 +3549,6 @@
         return (noteHashes || []).filter((hash) => valid.has(String(hash)));
       }
 
-      function autoSelectFundingNotes(asset, requiredAmount) {
-        const notes = Array.isArray(latestNotesPortfolio?.outstandingNotes) ? latestNotesPortfolio.outstandingNotes : [];
-        const matches = notes
-          .filter((note) => String(note?.asset || '').toUpperCase() === String(asset || '').toUpperCase())
-          .sort((a, b) => Number(a.createdAtUnixMs || 0) - Number(b.createdAtUnixMs || 0));
-        const selected = [];
-        let remaining = Number(requiredAmount || 0);
-        for (const note of matches) {
-          if (!(remaining > 1e-9)) break;
-          selected.push(String(note.noteHash));
-          remaining -= Number(note.amount || 0);
-        }
-        if (remaining > 1e-9) {
-          throw new Error(`insufficient note collateral for ${asset}: required ${fmtDisplayNumber(requiredAmount)}`);
-        }
-        return selected;
-      }
-
       async function createOrderAuthorization({ wallet, market, side, orderType, timeInForce, limitPrice, quantity, fundingNoteHashes, frontendId }) {
         const nonce = `ord_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
         const expiresAtUnixMs = Date.now() + 5 * 60 * 1000;
@@ -3301,6 +3578,55 @@
           method: signed.method,
           raw: signed.raw
         };
+      }
+
+      async function createWalletAuthorization(scope, action, wallet, resourceId = null) {
+        const isReusableRead = scope === 'account-read';
+        const cacheKey = isReusableRead
+          ? `${scope}:${action}:${wallet}:${resourceId || ''}`
+          : '';
+        if (isReusableRead) {
+          const cached = walletReadAuthorizationCache.get(cacheKey);
+          if (cached && Number(cached.expiresAtUnixMs || 0) > Date.now() + 15000) return cached;
+          try {
+            const stored = JSON.parse(sessionStorage.getItem(`${WALLET_READ_AUTH_SESSION_PREFIX}${cacheKey}`) || 'null');
+            if (stored && Number(stored.expiresAtUnixMs || 0) > Date.now() + 15000) {
+              walletReadAuthorizationCache.set(cacheKey, stored);
+              return stored;
+            }
+          } catch {}
+          const inFlight = walletReadAuthorizationInFlight.get(cacheKey);
+          if (inFlight) return inFlight;
+        }
+        const nonce = `${scope}_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
+        const expiresAtUnixMs = Date.now() + (isReusableRead ? WALLET_READ_AUTH_EXPIRY_MS : 5 * 60 * 1000);
+        const payload = stableStringify({ scope, action, wallet, resourceId, nonce, expiresAtUnixMs });
+        const request = (async () => {
+          const signed = await signMessageWithWallet(payload, wallet);
+          const authorization = {
+            publicKey: signed.publicKey || wallet,
+            payload,
+            nonce,
+            expiresAtUnixMs,
+            signature: signed.signature,
+            method: signed.method
+          };
+          if (isReusableRead) {
+            walletReadAuthorizationCache.set(cacheKey, authorization);
+            try {
+              sessionStorage.setItem(`${WALLET_READ_AUTH_SESSION_PREFIX}${cacheKey}`, JSON.stringify(authorization));
+            } catch {}
+          }
+          return authorization;
+        })();
+        if (isReusableRead) walletReadAuthorizationInFlight.set(cacheKey, request);
+        try {
+          return await request;
+        } finally {
+          if (isReusableRead && walletReadAuthorizationInFlight.get(cacheKey) === request) {
+            walletReadAuthorizationInFlight.delete(cacheKey);
+          }
+        }
       }
 
       function updateOrderTypeUi() {
@@ -3335,20 +3661,52 @@
 
       function updateWalletButtonState() {
         const btn = document.getElementById('globalConnectWalletBtn');
+        const disconnectButton = document.getElementById('disconnectWalletBtn');
+        const networkTrigger = document.getElementById('networkWalletMenuBtn');
+        const networkProviderStatus = document.getElementById('networkWalletProviderStatus');
+        const networkAddressStatus = document.getElementById('networkWalletAddressStatus');
+        const activeProviderLabel = activeWalletProvider === 'metamask' ? 'MetaMask Flask' : activeWalletProvider === 'auro' ? 'Auro' : 'Wallet';
+        const activeAddress = String(activeWallet || document.getElementById('ordWallet')?.value || '').trim();
+        const transferSignButton = document.getElementById('signTokenTransferBtn');
+        if (transferSignButton) {
+          transferSignButton.textContent =
+            activeWalletProvider === 'metamask'
+              ? 'Sign in MetaMask'
+              : activeWalletProvider === 'auro'
+                ? 'Sign in Auro'
+                : 'Sign in Wallet';
+        }
         if (!btn) return;
         if (!walletConnected) {
           btn.hidden = false;
-          btn.textContent = 'Connect Auro Wallet';
+          btn.textContent = 'Connect Wallet';
           btn.classList.remove('connected');
           btn.disabled = false;
           btn.title = '';
+          if (networkTrigger) {
+            networkTrigger.classList.remove('connected');
+            networkTrigger.title = 'Choose a wallet';
+          }
+          if (networkProviderStatus) networkProviderStatus.textContent = 'No wallet connected';
+          if (networkAddressStatus) networkAddressStatus.textContent = 'Choose a wallet to connect.';
+          if (disconnectButton) disconnectButton.disabled = true;
           return;
         }
         btn.hidden = true;
-        const w = String(document.getElementById('ordWallet')?.value || '').trim();
+        const w = activeAddress;
         btn.classList.add('connected');
         btn.disabled = false;
         btn.title = w || '';
+        if (networkTrigger) {
+          networkTrigger.classList.add('connected');
+          networkTrigger.title = `${activeProviderLabel}: ${w}`;
+        }
+        if (networkProviderStatus) networkProviderStatus.textContent = `${activeProviderLabel} connected`;
+        if (networkAddressStatus) networkAddressStatus.textContent = w || 'Address unavailable';
+        if (disconnectButton) {
+          disconnectButton.disabled = false;
+          disconnectButton.textContent = `Disconnect ${activeProviderLabel}`;
+        }
       }
 
       function dismissWelcomeOverlay() {
@@ -3370,13 +3728,16 @@
         if (!dismissed) overlay.classList.add('is-open');
       }
 
-      async function connectWallet() {
-        const provider = window.mina;
-        if (!provider) throw new Error('No Mina wallet provider found in browser');
-        const wallet = await readAuroWallet({ request: true });
+      async function connectWallet(providerKind) {
+        if (providerKind === 'metamask') await installMetaMaskMinaSnap();
+        walletAutoConnectPaused = false;
+        activeWalletProvider = providerKind;
+        const provider = getMinaWalletProvider();
+        if (!provider) throw new Error('Selected wallet provider was not found in browser');
+        const wallet = await readConnectedWallet({ request: true });
         if (!wallet || typeof wallet !== 'string') throw new Error('Wallet did not return an address');
 
-        activeAuroWallet = wallet;
+        activeWallet = wallet;
         walletConnected = true;
         setWalletFields(wallet);
         updateWalletButtonState();
@@ -3450,8 +3811,12 @@
 
       async function cancelOpenOrder(orderId, cancelToken) {
         if (!orderId || !cancelToken) throw new Error('cancel credentials missing');
-        const result = await sdk.cancelOrder(orderId, cancelToken);
         const wallet = syncActivityWalletFromOrder(false);
+        const result = await sdk.cancelOrder(
+          orderId,
+          cancelToken,
+          await createWalletAuthorization('order-cancel', 'cancel', wallet, orderId)
+        );
         if (wallet) {
           const order = result?.order || {};
           rememberLocalActivity(wallet, [
@@ -3587,14 +3952,14 @@
           String(document.getElementById('chainWallet')?.value || '').trim() ||
           String(document.getElementById('noteWallet')?.value || '').trim();
         if (!wallet) {
-          setText('notesPortfolioOut', 'Enter a wallet address or connect Auro Wallet.');
+          setText('notesPortfolioOut', 'Enter a wallet address or connect a wallet.');
           return;
         }
         if (isDemoWalletPlaceholder(wallet)) {
           setText('notesPortfolioOut', walletSetupMessage('sync'));
           return;
         }
-        activeAuroWallet = '';
+        activeWallet = '';
         walletConnected = false;
         updateWalletButtonState();
         setText('notesPortfolioOut', 'Syncing on-chain balances and rebuilding wallet + private collateral view...');
@@ -3839,13 +4204,14 @@
         const timeBtn = document.getElementById('activityTimeHeader');
         const actionBtn = document.getElementById('activityActionHeader');
         const sideBtn = document.getElementById('activitySideHeader');
+        const openOrdersView = document.getElementById('activityView')?.value === 'open';
         if (timeBtn) {
           timeBtn.textContent = activityFilterState.sortTime === 'asc' ? 'Time ↑' : 'Time ↓';
           timeBtn.classList.add('is-active');
         }
         if (actionBtn) {
-          actionBtn.textContent = activityFilterState.openOnly ? 'Action: Open' : 'Action';
-          actionBtn.classList.toggle('is-active', activityFilterState.openOnly);
+          actionBtn.textContent = openOrdersView || activityFilterState.openOnly ? 'Action: Open' : 'Action';
+          actionBtn.classList.toggle('is-active', openOrdersView || activityFilterState.openOnly);
         }
         if (sideBtn) {
           const sideValue = String(document.getElementById('activitySideFilter')?.value || 'all').toUpperCase();
@@ -3854,7 +4220,7 @@
         }
       }
 
-      function renderActivity(events, openOrders) {
+      function renderActivity(events, openOrders, { openOnly = false } = {}) {
         const root = document.getElementById('activityRows');
         root.innerHTML = '';
         const filters = getActivityFilterConfig();
@@ -3883,7 +4249,7 @@
           )
         );
         const sortDirection = activityFilterState.sortTime === 'asc' ? 1 : -1;
-        if (activityFilterState.openOnly) collapsedEvents = [];
+        if (activityFilterState.openOnly || openOnly) collapsedEvents = [];
         const timeline = [
           ...activeOrders.map((order) => ({ kind: 'open-order', createdAtUnixMs: Number(order.createdAtUnixMs || 0), order })),
           ...collapsedEvents.map((ev) => ({ kind: 'event', createdAtUnixMs: Number(ev.createdAtUnixMs || 0), ev }))
@@ -3891,7 +4257,7 @@
         if ((!timeline || timeline.length === 0)) {
           const row = document.createElement('div');
           row.className = 'activity-row';
-          row.innerHTML = `<div>-</div><div>No activity</div><div>-</div><div>-</div><div>-</div><div>-</div><div>Submit orders to populate history.</div>`;
+          row.innerHTML = `<div>-</div><div>${openOnly ? 'No open orders' : 'No activity'}</div><div>-</div><div>-</div><div>-</div><div>-</div><div>${openOnly ? 'Open orders will appear here with a Cancel action.' : 'Submit orders to populate history.'}</div>`;
           root.appendChild(row);
           return;
         }
@@ -4259,7 +4625,10 @@
         const height = Math.max(320, Math.floor(host.clientHeight || 320));
         const visibleCount = computeVisibleCandleCount(rows.length);
         const visibleRows = rows.slice(-visibleCount);
-        const pad = { top: 14, right: 64, bottom: 42, left: 64 };
+        // Seven integer digits, a decimal point, and seven fractional digits
+        // need about 90px in the chart's 10px monospace axis labels.
+        const axisPad = Math.min(96, Math.max(72, Math.floor((width - 120) / 2)));
+        const pad = { top: 14, right: axisPad, bottom: 42, left: axisPad };
         const volumeHeight = 72;
         const priceBottom = height - volumeHeight - 22;
         const priceHeight = Math.max(120, priceBottom - pad.top);
@@ -4293,8 +4662,8 @@
           const price = maxPrice - (scaledSpan / 4) * i;
           grid.push(`<line x1="${pad.left}" y1="${y.toFixed(2)}" x2="${(width - pad.right).toFixed(2)}" y2="${y.toFixed(2)}" stroke="#17324a" stroke-width="1" />`);
           labels.push(
-            `<text x="${(pad.left - 8).toFixed(2)}" y="${(y + 4).toFixed(2)}" text-anchor="end" fill="#8ba5bf" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">${fmtDisplayNumber(price)}</text>` +
-            `<text x="${(width - pad.right + 8).toFixed(2)}" y="${(y + 4).toFixed(2)}" fill="#8ba5bf" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">${fmtDisplayNumber(price)}</text>`
+            `<text x="${(pad.left - 8).toFixed(2)}" y="${(y + 4).toFixed(2)}" text-anchor="end" fill="#8ba5bf" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">${fmtChartAxisPrice(price)}</text>` +
+            `<text x="${(width - pad.right + 8).toFixed(2)}" y="${(y + 4).toFixed(2)}" fill="#8ba5bf" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">${fmtChartAxisPrice(price)}</text>`
           );
         }
         grid.push(`<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${(priceBottom + 1).toFixed(2)}" stroke="#214056" stroke-width="1" />`);
@@ -4504,6 +4873,33 @@
         }).join('');
       }
 
+      function renderPendingWithdrawals(pendingWithdrawals) {
+        const root = document.getElementById('pendingWithdrawals');
+        if (!root) return;
+        const pending = Array.isArray(pendingWithdrawals) ? pendingWithdrawals : [];
+        root.hidden = pending.length === 0;
+        root.innerHTML = pending.map((withdrawal) => `
+          <div class="withdraw-row">
+            <div class="mono">Payout pending</div>
+            <div class="mono">${formatDisplayAsset(withdrawal.asset || '-')}</div>
+            <div class="mono">${fmtDisplayNumber(withdrawal.amount)}</div>
+            <div><button type="button" class="ghost retry-pending-withdrawal" data-withdrawal-id="${withdrawal.id}" style="width:auto;padding:3px 8px;">Retry payout</button></div>
+          </div>
+        `).join('');
+        for (const button of root.querySelectorAll('.retry-pending-withdrawal')) {
+          button.onclick = async () => {
+            try {
+              button.disabled = true;
+              await retryPendingWithdrawal(button.dataset.withdrawalId);
+            } catch (error) {
+              setText('vaultOut', String(error?.message || error));
+            } finally {
+              button.disabled = false;
+            }
+          };
+        }
+      }
+
       async function refreshWithdrawPanel() {
         const wallet = document.getElementById('noteWallet')?.value?.trim();
         const asset = document.getElementById('noteAsset')?.value?.trim();
@@ -4513,14 +4909,21 @@
         const outstanding = latestNotesPortfolio?.outstandingByAsset || {};
         const total = Number(outstanding[String(asset || '').toUpperCase()] || 0);
         summary.textContent = asset ? `${asset}: ${fmtDisplayNumber(total)}` : 'Select an asset';
+        renderPendingWithdrawals(latestNotesPortfolio?.pendingWithdrawals || []);
         if (!wallet) {
           status.textContent = 'Enter a wallet to view withdrawals';
           renderWithdrawHistory([]);
           return;
         }
         try {
-          const activity = await sdk.getActivity(wallet, 100);
-          const withdrawals = mergeActivityWithLocal(wallet, activity.events || []).filter((ev) => ev.type === 'note_withdrawn');
+          const activity = await sdk.getActivity(
+            wallet,
+            100,
+            await createWalletAuthorization('account-read', 'wallet-read', wallet)
+          );
+          const withdrawals = mergeActivityWithLocal(wallet, activity.events || []).filter(
+            (ev) => ev.type === 'note_withdrawn' && Boolean(ev?.details?.txHash)
+          );
           const latest = withdrawals[0];
           status.textContent = latest
             ? `${latest.details?.asset || '-'} ${fmtDisplayNumber(latest.details?.amount)} at ${fmtUtcTime(latest.createdAtUnixMs)}`
@@ -4598,8 +5001,14 @@
           return;
         }
         const limit = Math.max(1, Number(document.getElementById('activityLimit').value || 150));
-        const data = await sdk.getActivity(wallet, limit);
-        renderActivity(mergeActivityWithLocal(wallet, data.events || []), data.openOrders || []);
+        const data = await sdk.getActivity(
+          wallet,
+          limit,
+          await createWalletAuthorization('account-read', 'wallet-read', wallet)
+        );
+        renderActivity(mergeActivityWithLocal(wallet, data.events || []), data.openOrders || [], {
+          openOnly: view === 'open'
+        });
       }
 
       async function refreshFeeStats() {
@@ -4752,12 +5161,11 @@
         }
         const required = pretrade.required || {};
         const requiredAsset = required.asset;
-        const requiredAmount = Number(required.amount || 0);
         const parsedOverrideHashes = fundingNoteRaw ? parseOverrideNoteHashes(fundingNoteRaw) : [];
         const sanitizedOverrideHashes = sanitizeOverrideNoteHashes(parsedOverrideHashes, requiredAsset);
         const fundingNoteHashes = sanitizedOverrideHashes.length
           ? sanitizedOverrideHashes
-          : autoSelectFundingNotes(requiredAsset, requiredAmount);
+          : [];
         if (parsedOverrideHashes.length && !sanitizedOverrideHashes.length) {
           document.getElementById('ordFundingNote').value = '';
         }
@@ -4805,7 +5213,7 @@
           if (msg.includes('funding note already spent') && fundingNoteRaw) {
             await refreshNotesPortfolio();
             document.getElementById('ordFundingNote').value = '';
-            payload.fundingNoteHashes = autoSelectFundingNotes(requiredAsset, requiredAmount);
+            payload.fundingNoteHashes = [];
             payload.orderAuthorization = await createOrderAuthorization({
               wallet,
               market,
@@ -5032,7 +5440,100 @@
         refreshWithdrawPanel().catch(() => {});
       };
       document.getElementById('globalConnectWalletBtn').onclick = async () => {
-        try { await connectWallet(); } catch (e) { setText('orderOut', String(e)); }
+        const menu = document.getElementById('walletProviderMenu');
+        const open = Boolean(menu?.hidden);
+        if (menu) menu.hidden = !open;
+        document.getElementById('globalConnectWalletBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      document.getElementById('networkWalletMenuBtn').onclick = () => {
+        const menu = document.getElementById('networkWalletMenu');
+        const open = Boolean(menu?.hidden);
+        if (menu) menu.hidden = !open;
+        document.getElementById('networkWalletMenuBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      async function connectSelectedWallet(providerKind, menuSource = 'global') {
+        const globalMenu = document.getElementById('walletProviderMenu');
+        const networkMenu = document.getElementById('networkWalletMenu');
+        if (globalMenu) globalMenu.hidden = true;
+        if (networkMenu && menuSource !== 'network') networkMenu.hidden = true;
+        const previousWallet = activeWallet;
+        const previousProvider = activeWalletProvider;
+        const previousAutoConnectPaused = walletAutoConnectPaused;
+        const trigger = document.getElementById('globalConnectWalletBtn');
+        const networkTrigger = document.getElementById('networkWalletMenuBtn');
+        const networkProviderStatus = document.getElementById('networkWalletProviderStatus');
+        const networkAddressStatus = document.getElementById('networkWalletAddressStatus');
+        const providerButtons = [
+          document.getElementById('connectAuroWalletBtn'),
+          document.getElementById('connectMetaMaskWalletBtn'),
+          document.getElementById('switchAuroWalletBtn'),
+          document.getElementById('switchMetaMaskWalletBtn')
+        ].filter(Boolean);
+        const providerLabel = providerKind === 'metamask' ? 'MetaMask Flask' : 'Auro';
+        if (trigger) {
+          trigger.disabled = true;
+          trigger.textContent = `Connecting ${providerLabel}...`;
+        }
+        if (networkTrigger) networkTrigger.disabled = true;
+        for (const button of providerButtons) button.disabled = true;
+        if (networkProviderStatus) networkProviderStatus.textContent = `Connecting ${providerLabel}...`;
+        if (networkAddressStatus) {
+          networkAddressStatus.textContent = providerKind === 'metamask'
+            ? 'Checking installed wallet providers and the Mina Snap...'
+            : 'Waiting for wallet approval...';
+        }
+        setText('orderOut', `Connecting ${providerLabel}...`);
+        try {
+          await connectWallet(providerKind);
+          if (networkMenu) networkMenu.hidden = true;
+        } catch (error) {
+          const message = String(error?.message || error);
+          activeWallet = previousWallet;
+          activeWalletProvider = previousProvider;
+          walletAutoConnectPaused = previousAutoConnectPaused;
+          updateWalletButtonState();
+          if (networkProviderStatus) networkProviderStatus.textContent = `${providerLabel} connection failed`;
+          if (networkAddressStatus) {
+            networkAddressStatus.textContent = providerKind === 'metamask'
+              ? `${metaMaskProviderDiagnostic || 'No compatible Flask provider was selected.'} ${message}`
+              : message;
+          }
+          if (menuSource === 'network' && networkMenu) networkMenu.hidden = false;
+          if (menuSource === 'global' && globalMenu) globalMenu.hidden = false;
+          setText('orderOut', `Error: ${message}`);
+        } finally {
+          for (const button of providerButtons) button.disabled = false;
+          if (trigger) {
+            trigger.disabled = false;
+            trigger.textContent = 'Connect Wallet';
+            trigger.setAttribute('aria-expanded', globalMenu?.hidden ? 'false' : 'true');
+          }
+          if (networkTrigger) {
+            networkTrigger.disabled = false;
+            networkTrigger.setAttribute('aria-expanded', networkMenu?.hidden ? 'false' : 'true');
+          }
+        }
+      }
+      document.getElementById('connectAuroWalletBtn').onclick = () => connectSelectedWallet('auro', 'global');
+      document.getElementById('connectMetaMaskWalletBtn').onclick = () => connectSelectedWallet('metamask', 'global');
+      document.getElementById('switchAuroWalletBtn').onclick = () => connectSelectedWallet('auro', 'network');
+      document.getElementById('switchMetaMaskWalletBtn').onclick = () => connectSelectedWallet('metamask', 'network');
+      document.getElementById('disconnectWalletBtn').onclick = () => {
+        walletAutoConnectPaused = true;
+        activeWallet = '';
+        activeWalletProvider = '';
+        activeMetaMaskSnapProvider = null;
+        walletConnected = false;
+        pendingTokenTransfer = null;
+        walletReadAuthorizationCache.clear();
+        walletReadAuthorizationInFlight.clear();
+        setWalletFields('');
+        const menu = document.getElementById('networkWalletMenu');
+        if (menu) menu.hidden = true;
+        document.getElementById('networkWalletMenuBtn').setAttribute('aria-expanded', 'false');
+        updateWalletButtonState();
+        updateOperatorPanelState();
+        setText('orderOut', 'Wallet disconnected from ShadowBook. Choose Auro or MetaMask Flask to connect again.');
       };
 
       document.getElementById('inspectBtn').onclick = async () => {
@@ -5047,7 +5548,12 @@
         try {
           const id = document.getElementById('inspectOrderId').value.trim();
           const token = document.getElementById('inspectToken').value.trim();
-          const result = await sdk.cancelOrder(id, token);
+          const wallet = syncActivityWalletFromOrder(false);
+          const result = await sdk.cancelOrder(
+            id,
+            token,
+            await createWalletAuthorization('order-cancel', 'cancel', wallet, id)
+          );
           setText('inspectOut', result);
           await refreshTrades();
           await refreshBook();
@@ -5069,23 +5575,26 @@
         const button = document.getElementById('buildTokenTransferBtn');
         try {
           button.disabled = true;
-          await buildTokenTransferForAuro();
+          button.textContent = 'Building...';
+          await buildTokenTransfer();
         } catch (e) {
           setText('tokenTransferOut', String(e));
         } finally {
           button.disabled = false;
+          button.textContent = 'Build Transfer';
         }
       };
       document.getElementById('signTokenTransferBtn').onclick = async () => {
         const button = document.getElementById('signTokenTransferBtn');
         try {
           button.disabled = true;
+          const walletName = activeWalletProvider === 'metamask' ? 'MetaMask' : 'Auro';
           setText('tokenTransferOut', {
             ok: true,
             pending: true,
-            message: 'Opening the prebuilt sZEKO transfer in Auro for signature.'
+            message: `Opening the prebuilt sZEKO transfer in ${walletName} for signature.`
           });
-          const result = await signBuiltTokenTransferWithAuro();
+          const result = await signBuiltTokenTransferWithWallet();
           setText('tokenTransferOut', {
             ok: true,
             submitted: true,
@@ -5344,14 +5853,14 @@
             pending: true,
             message: `Preparing ${fmtDisplayNumber(amount)} ${formatDisplayAsset(asset)} withdrawal to ${wallet}. Spending private notes and submitting payout transaction...`
           });
-          const result = await sdk.withdraw({ wallet, asset, amount });
-          rememberLocalActivity(wallet, [
-            makeLocalActivityEvent('note_withdrawn', {
-              asset,
-              amount,
-              txHash: result?.txHash || result?.payout?.txHash || null
-            })
-          ]);
+          const authorization = await createWalletAuthorization('withdraw', 'withdraw', wallet, `${String(asset).toUpperCase()}:${amount}`);
+          const result = await sdk.withdraw({ wallet, asset, amount, authorization });
+          const txHash = result?.txHash || result?.payout?.txHash || null;
+          if (result?.ok && !result?.pending && txHash) {
+            rememberLocalActivity(wallet, [
+              makeLocalActivityEvent('note_withdrawn', { asset, amount, txHash })
+            ]);
+          }
           setText('vaultOut', result);
           await refreshNotesPortfolio();
           await refreshNoteAssetOptions();
@@ -5364,6 +5873,44 @@
           }
         } catch (e) {
           setText('vaultOut', String(e));
+        } finally {
+          setWithdrawBusyState(false);
+        }
+      }
+
+      async function retryPendingWithdrawal(withdrawalId) {
+        const wallet = document.getElementById('noteWallet').value.trim();
+        const pending = Array.isArray(latestNotesPortfolio?.pendingWithdrawals)
+          ? latestNotesPortfolio.pendingWithdrawals.find((entry) => entry.id === withdrawalId)
+          : null;
+        if (!wallet || !pending) throw new Error('pending withdrawal is no longer available; refresh your wallet state');
+        setWithdrawBusyState(true);
+        try {
+          setText('vaultOut', {
+            ok: true,
+            pending: true,
+            message: `Retrying the existing ${fmtDisplayNumber(pending.amount)} ${formatDisplayAsset(pending.asset)} payout. No new notes will be consumed.`
+          });
+          const result = await sdk.retryWithdraw({
+            wallet,
+            withdrawalId,
+            authorization: await createWalletAuthorization('withdraw', 'withdraw-retry', wallet, `withdrawal:${withdrawalId}`)
+          });
+          const txHash = result?.txHash || result?.payout?.txHash || null;
+          if (result?.ok && txHash) {
+            rememberLocalActivity(wallet, [
+              makeLocalActivityEvent('note_withdrawn', {
+                asset: pending.asset,
+                amount: pending.amount,
+                txHash
+              })
+            ]);
+          }
+          setText('vaultOut', result);
+          await refreshNotesPortfolio();
+          await refreshNoteAssetOptions();
+          await refreshActivity();
+          if (wallet) await syncWalletContext(wallet);
         } finally {
           setWithdrawBusyState(false);
         }
@@ -5509,7 +6056,7 @@
           );
           const marketsResp = await sdk.getMarkets();
           populateMarketSelectors(marketsResp.markets || []);
-          await syncDetectedAuroWallet({ force: true }).catch(() => {});
+          await syncDetectedWallet({ force: true }).catch(() => {});
           void resumePendingDeposit();
           updateWalletButtonState();
           updateOrderTypeUi();
@@ -5522,7 +6069,7 @@
           await refreshOperatorPanel();
           await refreshPretradeChecklist();
           setInterval(() => {
-            syncDetectedAuroWallet().catch(() => {});
+            syncDetectedWallet().catch(() => {});
           }, 5000);
           setText('notesPortfolioOut', 'Refreshing wallet + private collateral...');
           await refreshNotesPortfolio();

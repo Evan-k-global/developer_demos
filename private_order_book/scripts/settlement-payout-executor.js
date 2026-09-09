@@ -10,6 +10,8 @@ import {
   UInt64
 } from 'o1js';
 import { FungibleToken } from 'mina-fungible-token';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 const API_BASE = (process.env.DARKPOOL_API || 'http://127.0.0.1:8791').replace(/\/$/, '');
 const ZEKO_GRAPHQL = String(process.env.ZEKO_GRAPHQL || '').trim();
@@ -19,6 +21,12 @@ const OPERATOR_PRIVATE_KEY = String(
 ).trim();
 const FEE_PAYER_PRIVATE_KEY = String(process.env.PAYOUT_FEE_PAYER_PRIVATE_KEY || OPERATOR_PRIVATE_KEY).trim();
 const EXPECTED_VAULT_ADDRESS = String(process.env.VAULT_DEPOSIT_ADDRESS || '').trim();
+const PAYOUT_JOURNAL_FILE = path.resolve(
+  process.env.PAYOUT_JOURNAL_FILE || path.join(process.env.DARKPOOL_DATA_DIR || 'data/zeko-sepolia', 'payout-journal.json')
+);
+const PAYOUT_EXECUTOR_LOCK_DIR = path.resolve(
+  process.env.PAYOUT_EXECUTOR_LOCK_DIR || `${PAYOUT_JOURNAL_FILE}.lock`
+);
 function normalizeAsset(asset) {
   return String(asset || '').trim().toUpperCase();
 }
@@ -115,11 +123,44 @@ function decimalToRawUInt64(amount, decimals) {
 }
 
 async function getNextPendingBatch() {
-  const data = await request('/api/darkpool/settlement/batches?limit=500');
+  if (!process.env.INTERNAL_SERVICE_SECRET) throw new Error('INTERNAL_SERVICE_SECRET is required for payout executor');
+  const data = await request('/api/darkpool/internal/settlement/batches?limit=500', {
+    headers: { 'x-internal-service-key': String(process.env.INTERNAL_SERVICE_SECRET || '') }
+  });
   const pending = (data.batches || [])
     .filter((b) => b.status === 'pending')
     .sort((a, b) => Number(a.batchId) - Number(b.batchId));
   return pending[0] || null;
+}
+
+async function loadPayoutJournal() {
+  try {
+    const parsed = JSON.parse(await readFile(PAYOUT_JOURNAL_FILE, 'utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function savePayoutJournal(journal) {
+  await mkdir(path.dirname(PAYOUT_JOURNAL_FILE), { recursive: true });
+  const temporary = `${PAYOUT_JOURNAL_FILE}.${process.pid}.tmp`;
+  await writeFile(temporary, JSON.stringify(journal, null, 2), 'utf8');
+  await rename(temporary, PAYOUT_JOURNAL_FILE);
+}
+
+async function acquirePayoutExecutorLock() {
+  try {
+    await mkdir(PAYOUT_EXECUTOR_LOCK_DIR);
+  } catch (error) {
+    if (error?.code === 'EEXIST') {
+      throw new Error('another payout executor is already running; wait for it to finish before retrying');
+    }
+    throw error;
+  }
+  return async () => {
+    await rm(PAYOUT_EXECUTOR_LOCK_DIR, { recursive: true, force: true });
+  };
 }
 
 async function graphqlRequest(query, variables = {}) {
@@ -221,6 +262,9 @@ async function main() {
   if (!OPERATOR_PRIVATE_KEY) throw new Error('PAYOUT_OPERATOR_PRIVATE_KEY or DEPLOYER_PRIVATE_KEY is required');
   if (!FEE_PAYER_PRIVATE_KEY) throw new Error('PAYOUT_FEE_PAYER_PRIVATE_KEY is required');
 
+  const releaseLock = await acquirePayoutExecutorLock();
+  try {
+
   const stdin = await readStdinJson();
   const pending = stdin?.batch || (await getNextPendingBatch());
   if (!pending) {
@@ -253,6 +297,7 @@ async function main() {
   });
   Mina.setActiveInstance(network);
 
+  const payoutJournal = await loadPayoutJournal();
   const payoutTxs = [];
   for (const payout of payouts) {
     const wallet = String(payout.wallet || '').trim();
@@ -263,9 +308,19 @@ async function main() {
     if (!wallet || !tokenId58 || !(amount > 0)) {
       throw new Error(`invalid payout entry in batch ${pending.batchId}`);
     }
+    const payoutKey = `${pending.batchId}|${wallet}|${tokenId58}`;
+    const journalEntry = payoutJournal[payoutKey];
+    if (journalEntry?.txHash) {
+      payoutTxs.push({ wallet, tokenId: tokenId58, txHash: journalEntry.txHash });
+      continue;
+    }
     const tokenId = TokenId.fromBase58(tokenId58);
     const to = PublicKey.fromBase58(wallet);
     const rawAmount = decimalToRawUInt64(amount, decimals);
+    // Both keys can authorize this transaction. Refresh them before building
+    // so o1js does not carry an earlier account nonce into the proof.
+    await fetchAccount({ publicKey: feePayerPub });
+    await fetchAccount({ publicKey: operatorPub });
     const currentFeePayerNonce = await readAccountNonce(feePayerPub);
     if (currentFeePayerNonce === null) {
       throw new Error(`unable to read fee payer nonce for ${feePayerPub.toBase58()}`);
@@ -293,8 +348,6 @@ async function main() {
             const token = new FungibleToken(tokenAddress);
             if (!fungibleTokenCompilePromise) fungibleTokenCompilePromise = FungibleToken.compile();
             await fungibleTokenCompilePromise;
-            await fetchAccount({ publicKey: feePayerPub });
-            await fetchAccount({ publicKey: operatorPub });
             await fetchAccount({ publicKey: operatorPub, tokenId });
             const receiverNeedsTokenAccount = !(await doesOnchainTokenAccountExist(wallet, tokenId58));
             const builtTx = await Mina.transaction(
@@ -323,7 +376,21 @@ async function main() {
     tx.sign([feePayerKey, operatorKey]);
     const sent = await tx.send();
     if (!sent?.hash) throw new Error(`missing tx hash for payout to ${wallet} token ${tokenId58}`);
+    // Persist the submission before waiting for inclusion. A restart may delay
+    // reconciliation, but it must never create a second payment.
+    payoutJournal[payoutKey] = {
+      batchId: pending.batchId,
+      wallet,
+      tokenId: tokenId58,
+      txHash: sent.hash,
+      status: 'submitted',
+      submittedAtUnixMs: Date.now()
+    };
+    await savePayoutJournal(payoutJournal);
     await waitForPayoutInclusion(sent, feePayerPub, nextFeePayerNonce);
+    payoutJournal[payoutKey].status = 'included';
+    payoutJournal[payoutKey].includedAtUnixMs = Date.now();
+    await savePayoutJournal(payoutJournal);
     payoutTxs.push({ wallet, tokenId: tokenId58, txHash: sent.hash });
   }
 
@@ -339,6 +406,9 @@ async function main() {
       2
     )
   );
+  } finally {
+    await releaseLock();
+  }
 }
 
 main().catch((error) => {

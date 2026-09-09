@@ -48,7 +48,8 @@ async function request(pathname, options = {}) {
 }
 
 async function getNextPending() {
-  const data = await request('/api/darkpool/settlement/batches?limit=500');
+  if (!INTERNAL_SERVICE_SECRET) throw new Error('INTERNAL_SERVICE_SECRET is required for settlement worker');
+  const data = await request('/api/darkpool/internal/settlement/batches?limit=500');
   const pending = (data.batches || [])
     .filter((b) => b.status === 'pending')
     .sort((a, b) => Number(a.batchId) - Number(b.batchId));
@@ -165,6 +166,13 @@ async function commitLoop() {
     try {
       const pending = await getNextPending();
       if (!pending) {
+        await new Promise((r) => setTimeout(r, Math.max(1000, INTERVAL_MS)));
+        continue;
+      }
+
+      const status = await request('/api/darkpool/status');
+      if (status?.server?.realFundsMode && status?.settlement?.realFundsSettlementEnabled === false) {
+        console.log(`[settlement-worker] settlement paused: ${status.settlement.blockedReason}`);
         await new Promise((r) => setTimeout(r, Math.max(1000, INTERVAL_MS)));
         continue;
       }
