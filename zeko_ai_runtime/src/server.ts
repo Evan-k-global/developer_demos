@@ -1411,7 +1411,7 @@ function normalizeApiKeyHeader(value: string | string[] | undefined) {
 }
 
 function getCreditsSpendMinaFromBody(body: unknown) {
-  const candidate = Number((body as any)?.amountMina);
+  const candidate = Number((body as any)?.amountSEth ?? (body as any)?.amountMina);
   return Number.isFinite(candidate) && candidate > 0 ? candidate : 0;
 }
 

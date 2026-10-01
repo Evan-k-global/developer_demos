@@ -71,7 +71,7 @@ Defaults:
 
 ## Compatibility note
 
-The current Zeko Ethereum Sepolia accepted deploy and update transactions from this project with the Mina `testnet` signer domain while targeting Zeko GraphQL endpoints. If Zeko's custom network signer domain becomes the required path later, set `ZEKO_NETWORK_ID` explicitly and re-test the scripts.
+For Zeko Ethereum Sepolia, use the Mina `testnet` signer domain while targeting the Zeko GraphQL endpoint. If Zeko's custom network signer domain becomes the required path later, set `ZEKO_NETWORK_ID` explicitly and validate the scripts before submitting transactions.
 
 ## Migration note
 
